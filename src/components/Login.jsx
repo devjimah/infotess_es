@@ -27,7 +27,7 @@ function Login() {
             "Content-Type": "application/json",
           },
           mode: "no-cors",
-          body: formData,
+          body: JSON.stringify(formData),
         }
       );
       const data = response.data;

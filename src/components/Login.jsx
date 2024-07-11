@@ -18,7 +18,7 @@ function Login() {
 
   const handleLogin = async () => {
     try {
-      const formData = {userName, password}
+      const formData = { userName, password };
       const response = await fetch(
         "https://es-api.onrender.com/api/auth/super-admin/login",
         {

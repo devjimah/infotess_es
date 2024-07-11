@@ -21,8 +21,6 @@ function Login() {
           headers: {
             "Content-Type": "application/json",
           },
-          mode: "no-cors",
-          body: formData,
         }
       );
       const data = response.data;

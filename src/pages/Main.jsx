@@ -12,19 +12,18 @@ import {
 import { UploadOutlined } from "@ant-design/icons";
 import { useNavigate } from "react-router-dom";
 import { useAppContext } from "../context/AppProvider";
+import axios from "axios";
 
 const { Option } = Select;
 const { Item } = Form;
 
 const PortfolioManager = () => {
   const { candidates, setCandidates } = useAppContext();
-  const [portfolios, setPortfolios] = useState(() => {
-    const storedPortfolios = localStorage.getItem("portfolios");
-    return storedPortfolios ? JSON.parse(storedPortfolios) : [];
-  });
+  const [portfolios, setPortfolios] = useState([]);
   const [isPortfolioModalVisible, setIsPortfolioModalVisible] = useState(false);
   const [isCandidateModalVisible, setIsCandidateModalVisible] = useState(false);
-  const [portfolioForm] = Form.useForm();
+  const [name, setName] = useState("");
+  const [priority, setPriority] = useState(Number);
   const [candidateForm] = Form.useForm();
   const [currentPage, setCurrentPage] = useState(1);
   const pageSize = 5;
@@ -44,10 +43,26 @@ const PortfolioManager = () => {
   const handlePortfolioCancel = () => setIsPortfolioModalVisible(false);
   const handleCandidateCancel = () => setIsCandidateModalVisible(false);
 
-  const handlePortfolioSubmit = (values) => {
-    setPortfolios([...portfolios, values]);
-    setIsPortfolioModalVisible(false);
-    portfolioForm.resetFields();
+  const handlePortfolioSubmit = () => {
+    const formData = { name, priority };
+
+    const response = axios.post(
+      "http://localhost:3000/api/portfolio",
+      formData,
+      {
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${localStorage.getItem("token")}`,
+        },
+      }
+    );
+
+    const data = response.data;
+    setPortfolios([...portfolios, data]);
+    console.log(data);
+    // setPortfolios([...portfolios, values]);
+    // setIsPortfolioModalVisible(false);
+    // portfolioForm.resetFields();
   };
 
   const handleCandidateSubmit = async (values) => {
@@ -137,12 +152,7 @@ const PortfolioManager = () => {
         onCancel={handlePortfolioCancel}
         footer={null}
       >
-        <Form
-          size="small"
-          form={portfolioForm}
-          layout="vertical"
-          onFinish={handlePortfolioSubmit}
-        >
+        <Form size="small" layout="vertical" onFinish={handlePortfolioSubmit}>
           <Item
             name="name"
             label="Name of Portfolio"
@@ -150,14 +160,22 @@ const PortfolioManager = () => {
               { required: true, message: "Please enter the portfolio name" },
             ]}
           >
-            <Input />
+            <Input
+              name="name"
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+            />
           </Item>
           <Item
             name="priority"
             label="Priority"
             rules={[{ required: true, message: "Please enter the priority" }]}
           >
-            <Input />
+            <Input
+              name="priority"
+              value={priority}
+              onChange={(e) => setPriority(e.target.value)}
+            />
           </Item>
           <Item>
             <Button type="primary" htmlType="submit">
@@ -208,7 +226,6 @@ const PortfolioManager = () => {
           >
             <Select>
               <Option value="Male">elekkeee</Option>
-             
             </Select>
           </Item>
           <Item

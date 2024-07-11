@@ -2,8 +2,8 @@ import { useNavigate } from "react-router-dom";
 import { Button, Input, Form, message } from "antd";
 import { useAppContext } from "../context/AppProvider";
 import "tailwindcss/tailwind.css";
-import axios from "axios";
 import { useState } from "react";
+import axios from "axios";
 
 function Login() {
   const { setIsLoggedIn } = useAppContext();
@@ -11,23 +11,16 @@ function Login() {
   const [userName, setUserName] = useState("");
   const [password, setPassword] = useState("");
 
-  const handleChange = () => {
-    setUserName(event.target.value);
-    setPassword(event.target.value);
-  };
-
   const handleLogin = async () => {
     try {
       const formData = { userName, password };
-      const response = await fetch(
-        "https://es-api.onrender.com/api/auth/super-admin/login",
+      const response = await axios.post(
+        "http://localhost:3000/api/auth/super-admin/login",
+        formData,
         {
-          method: "POST",
           headers: {
             "Content-Type": "application/json",
           },
-          mode: "no-cors",
-          body: formData,
         }
       );
       const data = response.data;
@@ -68,7 +61,7 @@ function Login() {
               type="text"
               name="userName"
               value={userName}
-              onChange={handleChange}
+              onChange={(e) => setUserName(e.target.value)}
               placeholder="Name"
               className="w-48 py-2 border-b-2 border-blue-950 focus:outline-none focus:border-b-2 focus:border-blue-950"
             />
@@ -81,7 +74,7 @@ function Login() {
               type="password"
               name="password"
               value={password}
-              onChange={handleChange}
+              onChange={(e) => setPassword(e.target.value)}
               placeholder="Password"
               className="w-48 py-2 border-b-2 border-blue-950 focus:outline-none focus:border-b-2 focus:border-blue-950"
             />

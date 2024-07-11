@@ -1,0 +1,34 @@
+{
+    "routes": [
+        {
+            "src": "/",
+            "dest": "/"
+        },
+        {
+            "src": "/login",
+            "dest": "/"
+        },
+        {
+            "src": "/create-election",
+            "dest": "/"
+        },
+        {
+            "src": "/dashboard",
+            "dest": "/"
+        },
+        {
+            "src": "/candidates",
+            "dest": "/"
+        },
+        {
+            "src": "/voters-login",
+            "dest": "/"
+        },
+        {
+            "src": "/officials-login",
+            "dest": "/"
+        }
+       
+
+    ]
+}

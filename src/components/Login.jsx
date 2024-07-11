@@ -26,7 +26,7 @@ function Login() {
           headers: {
             "Content-Type": "application/json",
           },
-          // mode: "no-cors",
+          mode: "no-cors",
           body: formData,
         }
       );

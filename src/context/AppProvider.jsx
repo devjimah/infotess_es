@@ -1,40 +1,25 @@
 import { createContext, useContext, useState, useEffect } from "react";
 import PropTypes from "prop-types";
+import axios from "axios";
 
 const AppContext = createContext();
 
 export const AppProvider = ({ children }) => {
-
-
-   const [voterRegister, setVoterRegister] = useState([]);
-
-   useEffect(() => {
-     const savedVoterRegister =
-       JSON.parse(localStorage.getItem("voterRegister")) || [];
-    // Add this line
-     setVoterRegister(savedVoterRegister);
-   }, []);
-
+  const [candidates, setCandidates] = useState([]);
   useEffect(() => {
-    localStorage.setItem("voterRegister", JSON.stringify(voterRegister));
-  }, [voterRegister]);
+    const fetchCandidates = async () => {
+      const response = await axios.get("http://localhost:3000/api/candidate", {
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${localStorage.getItem("token")}`,
+        },
+      });
+      const data = await response.data;
+      setCandidates(data);
+    };
 
-    const [usedOtps, setUsedOtps] = useState([]);
-
-  useEffect(() => {
-    const savedVoterRegister =
-      JSON.parse(localStorage.getItem("voterRegister")) || [];
-    setVoterRegister(savedVoterRegister);
-    const savedCandidates =
-      JSON.parse(localStorage.getItem("candidates")) || [];
-    setCandidates(savedCandidates);
-  }, []);
-
-  useEffect(() => {
-    const savedVoterRegister =
-      JSON.parse(localStorage.getItem("voterRegister")) || [];
-    setVoterRegister(savedVoterRegister);
-  }, []);
+    fetchCandidates();
+  }, [candidates]);
 
   const logout = () => {
     localStorage.removeItem("currentVoter");
@@ -44,27 +29,9 @@ export const AppProvider = ({ children }) => {
     return localStorage.getItem("isLoggedIn") === "true";
   });
 
-  const [elections, setElections] = useState(() => {
-    const savedElections = localStorage.getItem("elections");
-    return savedElections ? JSON.parse(savedElections) : [];
-  });
-
-  const [candidates, setCandidates] = useState(() => {
-    const storedCandidates = localStorage.getItem("candidates");
-    return storedCandidates ? JSON.parse(storedCandidates) : [];
-  });
-
   useEffect(() => {
     localStorage.setItem("isLoggedIn", isLoggedIn);
   }, [isLoggedIn]);
-
-  useEffect(() => {
-    localStorage.setItem("elections", JSON.stringify(elections));
-  }, [elections]);
-
-  useEffect(() => {
-    localStorage.setItem("candidates", JSON.stringify(candidates));
-  }, [candidates]);
 
   const handleLogout = () => {
     setIsLoggedIn(false);
@@ -76,16 +43,9 @@ export const AppProvider = ({ children }) => {
       value={{
         isLoggedIn,
         setIsLoggedIn,
-        elections,
-        setElections,
-        candidates,
-        setCandidates,
         handleLogout,
-        voterRegister,
-        setVoterRegister,
         logout,
-        usedOtps,
-        setUsedOtps,
+        candidates,
       }}
     >
       {children}

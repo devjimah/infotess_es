@@ -12,7 +12,9 @@ const UserChoicesChart = ({ candidates }) => {
 
   useEffect(() => {
     const fetchVotesAndUpdateChart = () => {
-      const storedVotes = localStorage.getItem("votes");
+      const storedVotes = candidates.map((candidate) => {
+        candidate.votes;
+      });
       if (storedVotes) {
         const votes = JSON.parse(storedVotes);
         setChartData(processData(candidates, votes));
@@ -109,7 +111,7 @@ UserChoicesChart.propTypes = {
     PropTypes.shape({
       name: PropTypes.string.isRequired,
     })
-  ).isRequired,
+  ),
 };
 
 export default UserChoicesChart;

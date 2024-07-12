@@ -27,6 +27,7 @@ const PortfolioManager = () => {
   const [priority, setPriority] = useState(0);
   const [candidateForm] = Form.useForm();
   const [currentPage, setCurrentPage] = useState(1);
+  const [portfolioName, setPortfolioName] = useState("");
   const pageSize = 5;
   const navigate = useNavigate();
 
@@ -34,9 +35,27 @@ const PortfolioManager = () => {
   //   localStorage.setItem("portfolios", JSON.stringify(portfolios));
   // }, [portfolios]);
 
-  useEffect(() => {
-    localStorage.setItem("candidates", JSON.stringify(candidates));
-  }, [candidates]);
+  // useEffect(() => {
+  //   localStorage.setItem("candidates", JSON.stringify(candidates));
+  // }, [candidates]);
+
+  const fetchPortfolioById = async (portfolioId) => {
+    try {
+      const response = await axios.get(
+        `http://localhost:3000/api/portfolio/${portfolioId}`,
+        {
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${localStorage.getItem("token")}`,
+          },
+        }
+      );
+      const data = response.data;
+      setPortfolioName(data.name);
+    } catch (error) {
+      console.log("Error fetching portfolio:", error);
+    }
+  };
 
   const showPortfolioModal = () => setIsPortfolioModalVisible(true);
   const showCandidateModal = () => setIsCandidateModalVisible(true);
@@ -157,16 +176,18 @@ const PortfolioManager = () => {
               bordered
               dataSource={candidates}
               renderItem={() => null}
-              pagination={false}
             >
               {candidates
                 .slice((currentPage - 1) * pageSize, currentPage * pageSize)
-                .map((item, index) => (
-                  <List.Item key={index} className="flex justify-between">
-                    <span>{item.name}</span>
-                    <span>{item.portfolio}</span>
-                  </List.Item>
-                ))}
+                .map((candidate, index) => {
+                  fetchPortfolioById(candidate.portfolio);
+                  return (
+                    <List.Item key={index} className="flex justify-between">
+                      <span>{candidate.name}</span>
+                      <span>{portfolioName}</span>
+                    </List.Item>
+                  );
+                })}
             </List>
             <Pagination
               current={currentPage}

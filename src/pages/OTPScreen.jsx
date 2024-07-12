@@ -3,17 +3,16 @@ import { Button, Form, Input, message } from "antd";
 import axios from "axios";
 
 const OTPScreen = () => {
-  const [studentID, setStudentID] = useState("");
-  const [otp, setOtp] = useState(null);
+  const [STUDENTID, setSTUDENTID] = useState("");
   const [isOtpGenerated, setIsOtpGenerated] = useState(false);
-
+  const [voterOTP, setVoterOTP] = useState("");
   const [isOfficialLoggedIn, setIsOfficialLoggedIn] = useState(false);
   const [officialID, setOfficialID] = useState("");
   const [officialPassword, setOfficialPassword] = useState("");
 
   const generateAlphanumericOTP = (length) => {
     const characters =
-      "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
+      "ABCDEFGHIJKLMNPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz123456789";
     let result = "";
     for (let i = 0; i < length; i++) {
       result += characters.charAt(
@@ -24,27 +23,6 @@ const OTPScreen = () => {
   };
 
   const handleOfficialLogin = async () => {
-    // const savedOfficials = JSON.parse(localStorage.getItem("officials")) || [];
-    // const official = savedOfficials.find(
-    //   (official) =>
-    //     official.studentID === officialID &&
-    //     official.password === officialPassword
-    // );
-
-    // if (official) {
-    //   if (official.accessGranted) {
-    //     setIsOfficialLoggedIn(true);
-    //     localStorage.setItem("loggedOfficial", JSON.stringify(official));
-    //     message.success("Login successful.");
-    //   } else {
-    //     message.error(
-    //       "Access denied. You do not have the required permissions."
-    //     );
-    //   }
-    // } else {
-    //   message.error("Invalid official ID or password.");
-    // }
-
     try {
       const formData = { STUDENTID: officialID, password: officialPassword };
       const response = await axios.post(
@@ -69,36 +47,60 @@ const OTPScreen = () => {
     }
   };
 
-  const generateOtp = () => {
-    const storedRegister =
-      JSON.parse(localStorage.getItem("voterRegister")) || [];
-    const voterIndex = storedRegister.findIndex(
-      (voter) =>
-        String(voter["STUDENT ID"]).trim().toLowerCase() ===
-        studentID.trim().toLowerCase()
-    );
-
-    if (voterIndex !== -1) {
-      const voter = storedRegister[voterIndex];
-      if (voter.otp) {
-        // OTP already exists for this student ID
-        setOtp(voter.otp);
-        message.info("OTP already exists for this Student ID.");
-      } else {
-        // Generate new OTP
-        const generatedOtp = generateAlphanumericOTP(5);
-        setOtp(generatedOtp);
-        voter.otp = generatedOtp;
-        storedRegister[voterIndex] = voter;
-        localStorage.setItem("voterRegister", JSON.stringify(storedRegister));
-        message.success("OTP generated successfully.");
-      }
+  const generateOTP = async () => {
+    try {
+      const formData = { STUDENTID, OTP: generateAlphanumericOTP(5) };
+      const response = await axios.post(
+        "http://localhost:3000/api/auth/register/voter",
+        formData,
+        {
+          headers: {
+            "Content-Type": "application/json",
+          },
+        }
+      );
+      const data = response.data;
+      console.log(data);
+      setVoterOTP(data.updatedVoter.OTP);
+      message.success("OTP generated successfully.");
       setIsOtpGenerated(true);
-    } else {
-      message.error("Student ID not found in the register.");
+    } catch (error) {
+      console.log(error);
       setIsOtpGenerated(false);
+      message.error("OTP generation failed.");
     }
   };
+
+  // const generateOtp = () => {
+  //   const storedRegister =
+  //     JSON.parse(localStorage.getItem("voterRegister")) || [];
+  //   const voterIndex = storedRegister.findIndex(
+  //     (voter) =>
+  //       String(voter["STUDENT ID"]).trim().toLowerCase() ===
+  //       studentID.trim().toLowerCase()
+  //   );
+
+  //   if (voterIndex !== -1) {
+  //     const voter = storedRegister[voterIndex];
+  //     if (voter.otp) {
+  //       // OTP already exists for this student ID
+  //       setOtp(voter.otp);
+  //       message.info("OTP already exists for this Student ID.");
+  //     } else {
+  //       // Generate new OTP
+  //       const generatedOtp = generateAlphanumericOTP(5);
+  //       setOtp(generatedOtp);
+  //       voter.otp = generatedOtp;
+  //       storedRegister[voterIndex] = voter;
+  //       localStorage.setItem("voterRegister", JSON.stringify(storedRegister));
+  //       message.success("OTP generated successfully.");
+  //     }
+  //     setIsOtpGenerated(true);
+  //   } else {
+  //     message.error("Student ID not found in the register.");
+  //     setIsOtpGenerated(false);
+  //   }
+  // };
 
   return !isOfficialLoggedIn ? (
     <div className="flex justify-center items-center h-screen">
@@ -135,23 +137,25 @@ const OTPScreen = () => {
     <div className="flex justify-center items-center h-screen">
       <div className="bg-white p-8 rounded shadow-lg max-w-md w-full flex flex-col items-center">
         <h2 className="text-2xl mb-4">Generate OTP</h2>
-        <Form layout="vertical" className="w-58">
+        <Form layout="vertical" className="w-58" onFinish={generateOTP}>
           <Form.Item label="Student ID">
             <Input
-              value={studentID}
-              onChange={(e) => setStudentID(e.target.value)}
+              value={STUDENTID}
+              onChange={(e) => setSTUDENTID(e.target.value)}
               placeholder="Enter student ID"
             />
           </Form.Item>
           <Form.Item>
-            <Button type="primary" className="w-full" onClick={generateOtp}>
+            <Button type="supmi" htmlType="submit" className="w-full">
               Generate OTP
             </Button>
           </Form.Item>
         </Form>
         {isOtpGenerated && (
           <div className="mt-4">
-            <h3>Your OTP is: {otp}</h3>
+            <h3>
+              Your OTP is: <span style={{ color: "red" }}>{voterOTP}</span>
+            </h3>
             <p>Please use this OTP to login.</p>
           </div>
         )}

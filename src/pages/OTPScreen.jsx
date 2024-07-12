@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { Button, Form, Input, message } from "antd";
+import axios from "axios";
 
 const OTPScreen = () => {
   const [studentID, setStudentID] = useState("");
@@ -22,26 +23,49 @@ const OTPScreen = () => {
     return result;
   };
 
-  const handleOfficialLogin = () => {
-    const savedOfficials = JSON.parse(localStorage.getItem("officials")) || [];
-    const official = savedOfficials.find(
-      (official) =>
-        official.studentID === officialID &&
-        official.password === officialPassword
-    );
+  const handleOfficialLogin = async () => {
+    // const savedOfficials = JSON.parse(localStorage.getItem("officials")) || [];
+    // const official = savedOfficials.find(
+    //   (official) =>
+    //     official.studentID === officialID &&
+    //     official.password === officialPassword
+    // );
 
-    if (official) {
-      if (official.accessGranted) {
-        setIsOfficialLoggedIn(true);
-        localStorage.setItem("loggedOfficial", JSON.stringify(official));
-        message.success("Login successful.");
-      } else {
-        message.error(
-          "Access denied. You do not have the required permissions."
-        );
-      }
-    } else {
-      message.error("Invalid official ID or password.");
+    // if (official) {
+    //   if (official.accessGranted) {
+    //     setIsOfficialLoggedIn(true);
+    //     localStorage.setItem("loggedOfficial", JSON.stringify(official));
+    //     message.success("Login successful.");
+    //   } else {
+    //     message.error(
+    //       "Access denied. You do not have the required permissions."
+    //     );
+    //   }
+    // } else {
+    //   message.error("Invalid official ID or password.");
+    // }
+
+    try {
+      const formData = { STUDENTID: officialID, password: officialPassword };
+      const response = await axios.post(
+        "http://localhost:3000/api/auth/official/login",
+        formData,
+        {
+          headers: {
+            "Content-Type": "application/json",
+          },
+        }
+      );
+      const data = response.data;
+      console.log(data);
+      const token = data.token;
+      localStorage.setItem("officialToken", token);
+
+      message.success("Login successful");
+      setIsOfficialLoggedIn(true);
+    } catch (error) {
+      console.log(error);
+      message.error("Login failed");
     }
   };
 

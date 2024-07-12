@@ -26,6 +26,15 @@ function CreateElection() {
   const [officials, setOfficials] = useState([])
   const [currentStep, setCurrentStep] = useState(0);
   const [isRegisterVisible, setIsRegisterVisible] = useState(false)
+  const [isModalVisible, setIsModalVisible] = useState(false)
+  const [title, setTitle] = useState("");
+  const [startTime, setStartTime] = useState(null);
+  const [endTime, setEndTime] = useState(null);
+  const [elections, setElections] = useState([]);
+
+
+  const API_BASE_URL = process.env.API_BASE_URL;
+  
   
 
   const handleNextStep = () => {
@@ -35,6 +44,34 @@ function CreateElection() {
   const handlePrevStep = () => {
     setCurrentStep(currentStep - 1);
   };
+
+
+  const handleCreateElection = async (e) => {
+  e.preventDefault();
+
+  try {
+    const formData = {
+      title: electionTitle,
+      startDate: electionStartTime.toISOString(),
+      endDate: electionEndTime.toISOString(),
+    };
+
+    const response = await axios.post(`${API_BASE_URL}/election`, formData, {
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${localStorage.getItem("token")}`,
+      },
+    });
+
+    setElections([...elections, response.data]);
+    setTitle("");
+    setStartTime(null);
+    setEndTime(null);
+    message.success("Election created successfully");
+  } catch (error) {
+    message.error("An error occurred. Please try again.");
+  }
+};
 
   const handleRegisterOfficial = async () => {
     try {
@@ -172,30 +209,45 @@ function CreateElection() {
             <Input
               className="w-52"
               placeholder="Enter Election Title"
-              value={}
-              onChange={}
+              value={ 
+title
+              }
+              onChange={
+                handleCreateElection
+              }
             />
           </Form.Item>
           <Form.Item label="Start Time">
             <DatePicker
               showTime={{ format: "HH:mm" }}
               format="YYYY-MM-DD HH:mm"
-              value={}
-              onChange={}
+              value={
+                  startTime
+              }
+              onChange={
+                (e) => setStartTime(e.target.value)  
+              }
             />
           </Form.Item>
           <Form.Item label="End Time">
             <DatePicker
               showTime={{ format: "HH:mm" }}
               format="YYYY-MM-DD HH:mm"
-              value={}
-              onChange={}
+              value={
+                endTime
+              }
+              onChange={
+                                (e) => setEndTime(e.target.value)
+
+              }
             />
           </Form.Item>
           <Button
             type="primary"
-            onClick={}
-            disabled={}
+            onClick={
+              handleCreateElection
+            }
+            disabled={!title || !startTime || !endTime}
           >
             Create Election
           </Button>

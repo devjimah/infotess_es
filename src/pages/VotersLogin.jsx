@@ -133,34 +133,37 @@ import { useState } from "react";
 import { Button, Form, Input, message } from "antd";
 import { useNavigate } from "react-router-dom";
 import { useAppContext } from "../context/AppProvider";
+import axios from "axios";
 
 const VoterLogin = () => {
-  const [studentID, setStudentID] = useState("");
-  const [otp, setOtp] = useState("");
+  const [STUDENTID, setSTUDENTID] = useState("");
+  const [OTP, setOTP] = useState("");
   const navigate = useNavigate();
-  const { setIsLoggedIn, voterRegister, usedOtps, setUsedOtps } =
-    useAppContext();
+  const { setIsLoggedIn } = useAppContext();
 
-  const handleLogin = () => {
-    const voter = voterRegister.find(
-      (voter) =>
-        String(voter["STUDENT ID"]).trim().toLowerCase() ===
-        studentID.trim().toLowerCase()
-    );
-
-    if (voter && voter.otp === otp) {
-      if (usedOtps.includes(otp)) {
-        message.error("This OTP has already been used");
-        return;
-      }
-
+  const handleLogin = async () => {
+    try {
+      const formData = {
+        STUDENTID,
+        OTP,
+      };
+      const response = await axios.post(
+        "http://localhost:3000/api/auth/voter/login",
+        formData,
+        {
+          headers: {
+            "Content-Type": "application/json",
+          },
+        }
+      );
+      const data = response.data;
+      localStorage.setItem("voterToken", data.token);
       setIsLoggedIn(true);
-      setUsedOtps([...usedOtps, otp]);
-      localStorage.setItem("currentVoter", JSON.stringify(voter));
       message.success("Login successful");
       navigate("/candidates");
-    } else {
-      message.error("Invalid student ID or OTP");
+    } catch (error) {
+      console.log(error);
+      message.error("Login failed");
     }
   };
 
@@ -171,15 +174,15 @@ const VoterLogin = () => {
         <Form layout="vertical" className="w-58 ">
           <Form.Item label="Student ID">
             <Input
-              value={studentID}
-              onChange={(e) => setStudentID(e.target.value)}
+              value={STUDENTID}
+              onChange={(e) => setSTUDENTID(e.target.value)}
               placeholder="Enter student ID"
             />
           </Form.Item>
           <Form.Item label="OTP">
             <Input
-              value={otp}
-              onChange={(e) => setOtp(e.target.value)}
+              value={OTP}
+              onChange={(e) => setOTP(e.target.value)}
               placeholder="Enter OTP"
             />
           </Form.Item>

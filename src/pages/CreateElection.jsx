@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import {
   Button,
@@ -325,7 +324,10 @@ function CreateElection() {
                     "YYYY-MM-DD HH:mm"
                   )} | Status: ${election.status}`}
                 />
-                <Button type="default" onClick={handleManualOpenElection}>
+                <Button
+                  type="default"
+                  onClick={handleManualOpenElection(election._id)}
+                >
                   Open Election
                 </Button>
                 <Button

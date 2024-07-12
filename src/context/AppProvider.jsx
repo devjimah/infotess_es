@@ -11,10 +11,7 @@ export const AppProvider = ({ children }) => {
    useEffect(() => {
      const savedVoterRegister =
        JSON.parse(localStorage.getItem("voterRegister")) || [];
-     console.log(
-       "AppProvider - Retrieved voterRegister from localStorage:",
-       savedVoterRegister
-     ); // Add this line
+    // Add this line
      setVoterRegister(savedVoterRegister);
    }, []);
 

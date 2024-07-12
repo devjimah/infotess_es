@@ -19,304 +19,14 @@ import axios from "axios";
 const { Step } = Steps;
 
 function CreateElection() {
-  const [currentStep, setCurrentStep] = useState(0);
-  // const [elections, setElections] = useState(
-  //   () => JSON.parse(localStorage.getItem("elections")) || []
-  // );
-  const [elections, setElections] = useState([]);
-  const [officials, setOfficials] = useState(
-    () => JSON.parse(localStorage.getItem("officials")) || []
-  );
-  const [fileList, setFileList] = useState([]);
-  const [isRegisterVisible, setIsRegisterVisible] = useState(false);
-
-  const [electionTitle, setElectionTitle] = useState("");
-  const [electionStartTime, setElectionStartTime] = useState(null);
-  const [electionEndTime, setElectionEndTime] = useState(null);
 
   const [fullName, setFullName] = useState("");
-  const [STUDENTID, setSTUDENTID] = useState("");
+  const [STUDENTID, setSTUDENTID] = useState(null);
   const [password, setPassword] = useState("");
-
-  const [isModalVisible, setIsModalVisible] = useState(false);
-  const [newEndTime, setNewEndTime] = useState(null);
-  const [extendIndex, setExtendIndex] = useState(null);
-
-  const prevElectionsRef = useRef(elections);
-  const [voterRegister, setVoterRegister] = useState(
-    () => JSON.parse(localStorage.getItem("voterRegister")) || []
-  );
-
-  useEffect(() => {
-    const updateElections = () => {
-      const now = new Date();
-      const updatedElections = elections.map((election) => {
-        if (
-          new Date(election.startTime) <= now &&
-          new Date(election.endTime) >= now
-        ) {
-          return { ...election, status: "active" };
-        } else if (new Date(election.endTime) < now) {
-          return { ...election, status: "ended" };
-        } else {
-          return { ...election, status: "scheduled" };
-        }
-      });
-
-      if (
-        JSON.stringify(updatedElections) !==
-        JSON.stringify(prevElectionsRef.current)
-      ) {
-        setElections(updatedElections);
-        localStorage.setItem("elections", JSON.stringify(updatedElections));
-        prevElectionsRef.current = updatedElections;
-      }
-    };
-
-    updateElections();
-  }, [elections, setElections]);
-
-  useEffect(() => {
-    localStorage.setItem("officials", JSON.stringify(officials));
-  }, [officials]);
-
-  const handleCreateOfficial = () => {
-    if (officials.length >= 2) {
-      message.error("Only two officials can be created.");
-      return;
-    }
-
-    if (!fullName || !STUDENTID || !password) {
-      message.error("Please fill all fields.");
-      return;
-    }
-
-    const newOfficial = {
-      fullName,
-      STUDENTID,
-      password,
-      accessGranted: false,
-    };
-
-    setOfficials([...officials, newOfficial]);
-    setFullName("");
-    setSTUDENTID("");
-    setPassword("");
-
-    message.success("Official created successfully.");
-
-    if (officials.length + 1 >= 2) {
-      handleNextStep();
-    }
-  };
-  useEffect(() => {
-    localStorage.setItem("voterRegister", JSON.stringify(voterRegister));
-  }, [voterRegister]);
-
-  const handleFileChange = ({ fileList }) => setFileList(fileList);
-
-  const handleUpload = () => {
-    if (fileList.length === 0 || !fileList[0]) {
-      message.error("Please select a file to upload");
-      return;
-    }
-
-    const file = fileList[0].originFileObj;
-    const acceptedTypes = [
-      "text/csv",
-      "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-    ];
-    if (!acceptedTypes.includes(file.type)) {
-      message.error("Only CSV and Excel files are allowed");
-      return;
-    }
-
-    const reader = new FileReader();
-    reader.onload = (event) => {
-      const content = event.target.result;
-      let parsedContent = [];
-
-      if (file.type === "text/csv") {
-        parsedContent = parseCSVContent(content);
-      } else if (
-        file.type ===
-        "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
-      ) {
-        parsedContent = parseXLSXContent(content);
-      }
-      setVoterRegister(parsedContent);
-      localStorage.setItem("voterRegister", JSON.stringify(parsedContent));
-      message.success("File uploaded and saved successfully");
-      handleNextStep();
-    };
-
-    if (file.type === "text/csv") {
-      reader.readAsText(file);
-    } else {
-      reader.readAsArrayBuffer(file);
-    }
-
-    setFileList([]);
-  };
-
-  const parseCSVContent = (csvContent) => {
-    const lines = csvContent.split(/\r?\n/);
-    const headers = lines[0].split(",");
-    const voterData = [];
-    for (let i = 1; i < lines.length; i++) {
-      const data = lines[i].split(",");
-      if (data.length === headers.length) {
-        const voter = {
-          "S/N": data[0],
-          "STUDENT ID": data[1],
-          FIRSTNAME: data[2],
-          MIDDLENAME: data[3],
-          LASTNAME: data[4],
-          GENDER: data[5],
-          LEVEL: data[6],
-        };
-        voterData.push(voter);
-      }
-    }
-    return voterData;
-  };
-
-  const parseXLSXContent = (arrayBuffer) => {
-    const data = new Uint8Array(arrayBuffer);
-    const workbook = XLSX.read(data, { type: "array" });
-    const firstSheetName = workbook.SheetNames[0];
-    const worksheet = workbook.Sheets[firstSheetName];
-    const jsonData = XLSX.utils.sheet_to_json(worksheet, { header: 1 });
-
-    const headers = jsonData[0];
-    const voterData = [];
-    for (let i = 1; i < jsonData.length; i++) {
-      const data = jsonData[i];
-      if (data.length === headers.length) {
-        const voter = {
-          "S/N": data[0],
-          "STUDENT ID": data[1],
-          FIRSTNAME: data[2],
-          MIDDLENAME: data[3],
-          LASTNAME: data[4],
-          GENDER: data[5],
-          LEVEL: data[6],
-        };
-        voterData.push(voter);
-      }
-    }
-    return voterData;
-  };
-  const handleCreateElection = async (e) => {
-    e.preventDefault();
-
-    try {
-      const formData = {
-        title: electionTitle,
-        startTime: electionStartTime.toISOString(),
-        endTime: electionEndTime.toISOString(),
-      }
-
-      await axios.post("https://es-api.onrender.com/election", formData, {
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: "Bearer " + localStorage.getItem("token"),
-        },
-      });
-
-      // Refresh elections
-      const response = await axios.get("https://es-api.onrender.com/election", {
-        headers: {
-          Authorization: "Bearer " + localStorage.getItem("token"),
-        },
-      });
-
-      setElections(response.data.elections);
-      setElectionTitle("");
-      setElectionStartTime(null);
-      setElectionEndTime(null);
-      message.success("Election created successfully");
-
-    } catch (error) {
-      message.error("An error occurred. Please try again.");
-    }
-  }
+  const [officials, setOfficials] = useState([])
+  const [currentStep, setCurrentStep] = useState(0);
+  const [isRegisterVisible, setIsRegisterVisible] = useState(false)
   
-
-  const showExtendModal = (index) => {
-    setIsModalVisible(true);
-    setExtendIndex(index);
-    setNewEndTime(null);
-  };
-
-  const handleExtendElection = async () => {
-
-    try {
-      const electionId = elections._id
-      const formData = {
-        endTime: newEndTime.toISOString(),
-      }
-
-      await axios.put(`https://es-api.onrender.com/election/${electionId}`, formData, {
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: "Bearer " + localStorage.getItem("token"),
-        },
-      });
-
-      // Refresh elections
-      const response = await axios.get("https://es-api.onrender.com/election", {
-        headers: {
-          Authorization: "Bearer " + localStorage.getItem("token"),
-        },
-      });
-
-      setElections(response.data.elections);
-      message.success("Election extended successfully");
-      setIsModalVisible(false);
-    } catch (error) {
-      message.error("An error occurred. Please try again.");
-    }
-
-    // if (!newEndTime) {
-    //   message.error("Please select a new end time");
-    //   return;
-    // }
-
-    // const updatedElections = elections.map((election, i) =>
-    //   i === extendIndex
-    //     ? { ...election, endTime: newEndTime.toISOString(), status: "extended" }
-    //     : election
-    // );
-    // setElections(updatedElections);
-    // localStorage.setItem("elections", JSON.stringify(updatedElections));
-    // message.success("Election extended successfully");
-    // setIsModalVisible(false);
-  };
-
-  const handleExtendCancel = () => {
-    setIsModalVisible(false);
-  };
-
-  const handleManualOpen = (index) => {
-    const now = new Date();
-    const election = elections[index];
-    if (new Date(election.endTime) < now) {
-      message.error("Election has already ended. Please extend the end time.");
-      return;
-    }
-
-    if (new Date(election.startTime) <= now) {
-      const updatedElections = elections.map((election, i) =>
-        i === index ? { ...election, status: "active" } : election
-      );
-      setElections(updatedElections);
-      localStorage.setItem("elections", JSON.stringify(updatedElections));
-      message.success("Election opened manually");
-    } else {
-      message.error("Election start time is not yet due");
-    }
-  };
 
   const handleNextStep = () => {
     setCurrentStep(currentStep + 1);
@@ -325,6 +35,55 @@ function CreateElection() {
   const handlePrevStep = () => {
     setCurrentStep(currentStep - 1);
   };
+
+  const handleRegisterOfficial = async () => {
+    try {
+      if (officials.length >= 2) {
+        message.error("Only two officials can be created")
+        return
+      }
+
+      if (!fullName || !STUDENTID || !password) {
+        message.error("Please fill all fields")
+        return
+      }
+
+      const formData = {
+        fullName,
+        STUDENTID,
+        password
+      }
+
+      await axios.post("http://localhost:3000/api/auth/register/official", formData, {
+        headers: {
+          "Content Type": "application/json",
+          Authorization: `Bearer ${localStorage.getItem("token")}`
+        }
+      });
+
+      // refresh officials
+      const newOfficials = await axios.get("http://localhost:3000/api/official", {
+        headers: {
+          "Content Type": "application/json",
+          Authorization: `Bearer ${localStorage.getItem("token")}`
+        }
+      });
+
+      setOfficials([...officials, newOfficials])
+      setFullName("");
+      setSTUDENTID(null);
+      setPassword("");
+
+      message.success("Official registered successfully");
+
+      if (officials.length + 1 >= 2) {
+        handleNextStep()
+      }
+    } catch (error) {
+      message.error("An error occured, please try again", error)
+    }
+  }
+  
 
   const steps = [
     {
@@ -370,7 +129,7 @@ function CreateElection() {
           <Button
             type="primary"
             className="w-52"
-            onClick={handleCreateOfficial}
+            onClick={handleRegisterOfficial}
             disabled={!fullName || !STUDENTID || !password}
           >
             Create Official
@@ -382,20 +141,20 @@ function CreateElection() {
       title: "Upload Voter Register",
       content: (
         <div className="flex mt-4 items-center space-x-4">
-          <Upload
+          {/* <Upload
             beforeUpload={() => false}
             fileList={fileList}
-            onChange={handleFileChange}
+            onChange={}
           >
             <Button icon={<UploadOutlined />}>Select File</Button>
           </Upload>
           <Button
             type="primary"
-            onClick={handleUpload}
+            onClick={}
             disabled={fileList.length === 0}
           >
             Upload
-          </Button>
+          </Button> */}
           <Button onClick={() => setIsRegisterVisible(true)}>
             View Register
           </Button>
@@ -413,30 +172,30 @@ function CreateElection() {
             <Input
               className="w-52"
               placeholder="Enter Election Title"
-              value={electionTitle}
-              onChange={(e) => setElectionTitle(e.target.value)}
+              value={}
+              onChange={}
             />
           </Form.Item>
           <Form.Item label="Start Time">
             <DatePicker
               showTime={{ format: "HH:mm" }}
               format="YYYY-MM-DD HH:mm"
-              value={electionStartTime}
-              onChange={(value) => setElectionStartTime(value)}
+              value={}
+              onChange={}
             />
           </Form.Item>
           <Form.Item label="End Time">
             <DatePicker
               showTime={{ format: "HH:mm" }}
               format="YYYY-MM-DD HH:mm"
-              value={electionEndTime}
-              onChange={(value) => setElectionEndTime(value)}
+              value={}
+              onChange={}
             />
           </Form.Item>
           <Button
             type="primary"
-            onClick={handleCreateElection}
-            disabled={!electionTitle || !electionStartTime || !electionEndTime}
+            onClick={}
+            disabled={}
           >
             Create Election
           </Button>
@@ -450,9 +209,9 @@ function CreateElection() {
           <h3>Created Elections</h3>
           <List
             itemLayout="horizontal"
-            dataSource={elections.slice(0, 2)}
+            dataSource={}
             renderItem={(election, index) => (
-              <List.Item key={election.id}>
+              <List.Item key={election._id}>
                 <List.Item.Meta
                   title={election.title}
                   description={`Start Time: ${moment(election.startTime).format(
@@ -461,10 +220,10 @@ function CreateElection() {
                     "YYYY-MM-DD HH:mm"
                   )} | Status: ${election.status}`}
                 />
-                <Button type="default" onClick={() => handleManualOpen(index)}>
+                <Button type="default" onClick={}>
                   Open Election
                 </Button>
-                <Button type="default" onClick={() => showExtendModal(index)}>
+                <Button type="default" onClick={}>
                   Extend Time
                 </Button>
                 <Button
@@ -519,8 +278,8 @@ function CreateElection() {
         <DatePicker
           showTime={{ format: "HH:mm" }}
           format="YYYY-MM-DD HH:mm"
-          value={newEndTime}
-          onChange={(value) => setNewEndTime(value)}
+          value={}
+          onChange={}
         />
       </Modal>
       <Modal
@@ -531,7 +290,7 @@ function CreateElection() {
         onCancel={() => setIsRegisterVisible(false)}
       >
         <Table
-          dataSource={voterRegister}
+          dataSource={}
           rowKey="S/N"
           columns={[
             { title: "S/N", dataIndex: "S/N", key: "S/N" },

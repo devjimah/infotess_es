@@ -8,6 +8,7 @@ import {
   Upload,
   List,
   Pagination,
+  Table,
 } from "antd";
 import { UploadOutlined } from "@ant-design/icons";
 import { useNavigate } from "react-router-dom";
@@ -23,15 +24,15 @@ const PortfolioManager = () => {
   const [isPortfolioModalVisible, setIsPortfolioModalVisible] = useState(false);
   const [isCandidateModalVisible, setIsCandidateModalVisible] = useState(false);
   const [name, setName] = useState("");
-  const [priority, setPriority] = useState(Number);
+  const [priority, setPriority] = useState(0);
   const [candidateForm] = Form.useForm();
   const [currentPage, setCurrentPage] = useState(1);
   const pageSize = 5;
   const navigate = useNavigate();
 
-  useEffect(() => {
-    localStorage.setItem("portfolios", JSON.stringify(portfolios));
-  }, [portfolios]);
+  // useEffect(() => {
+  //   localStorage.setItem("portfolios", JSON.stringify(portfolios));
+  // }, [portfolios]);
 
   useEffect(() => {
     localStorage.setItem("candidates", JSON.stringify(candidates));
@@ -43,10 +44,10 @@ const PortfolioManager = () => {
   const handlePortfolioCancel = () => setIsPortfolioModalVisible(false);
   const handleCandidateCancel = () => setIsCandidateModalVisible(false);
 
-  const handlePortfolioSubmit = () => {
+  const handlePortfolioSubmit = async () => {
     const formData = { name, priority };
 
-    const response = axios.post(
+    const response = await axios.get(
       "http://localhost:3000/api/portfolio",
       formData,
       {
@@ -58,12 +59,37 @@ const PortfolioManager = () => {
     );
 
     const data = response.data;
-    setPortfolios([...portfolios, data]);
     console.log(data);
+    setName("");
+    setPriority(0);
+
     // setPortfolios([...portfolios, values]);
     // setIsPortfolioModalVisible(false);
     // portfolioForm.resetFields();
   };
+
+  useEffect(() => {
+    const fetchPortfolios = async () => {
+      try {
+        const response = await axios.get(
+          "http://localhost:3000/api/portfolio",
+          {
+            headers: {
+              "Content-Type": "application/json",
+              Authorization: `Bearer ${localStorage.getItem("token")}`,
+            },
+          }
+        );
+        const data = response.data;
+        setPortfolios(data);
+        console.log(data);
+      } catch (error) {
+        console.error("Error fetching portfolios:", error);
+      }
+    };
+
+    fetchPortfolios();
+  }, []);
 
   const handleCandidateSubmit = async (values) => {
     const imageFile = values.image.file;
@@ -96,14 +122,21 @@ const PortfolioManager = () => {
           <Button type="primary" onClick={showPortfolioModal} className="w-48">
             Create Portfolio
           </Button>
-          <List
-            className="w-full"
-            header={<div className="font-bold text-lg">Created Portfolios</div>}
-            bordered
+          <Table
             dataSource={portfolios}
-            renderItem={(item) => (
-              <List.Item className="text-center">{item.name}</List.Item>
-            )}
+            columns={[
+              {
+                title: "Name",
+                dataIndex: "name",
+                key: "name",
+              },
+              {
+                title: "Priority",
+                dataIndex: "priority",
+                key: "priority",
+              },
+            ]}
+            pagination={false}
           />
         </div>
         <div className="space-y-4 w-[400px]">
@@ -235,7 +268,7 @@ const PortfolioManager = () => {
           >
             <Select>
               {portfolios.map((portfolio, index) => (
-                <Option key={index} value={portfolio.name}>
+                <Option key={index} value={portfolio._id}>
                   {portfolio.name}
                 </Option>
               ))}

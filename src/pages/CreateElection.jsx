@@ -5,14 +5,11 @@ import {
   Input,
   DatePicker,
   message,
-  Upload,
   Steps,
   List,
   Modal,
   Table,
 } from "antd";
-import { UploadOutlined } from "@ant-design/icons";
-import * as XLSX from "xlsx";
 import moment from "moment";
 import axios from "axios";
 
@@ -31,6 +28,8 @@ function CreateElection() {
   const [startTime, setStartTime] = useState(null);
   const [endTime, setEndTime] = useState(null);
   const [elections, setElections] = useState([]);
+
+
 
 
   const API_BASE_URL = process.env.API_BASE_URL;
@@ -175,23 +174,10 @@ function CreateElection() {
       ),
     },
     {
-      title: "Upload Voter Register",
+      title: "Voter Register",
       content: (
         <div className="flex mt-4 items-center space-x-4">
-          {/* <Upload
-            beforeUpload={() => false}
-            fileList={fileList}
-            onChange={}
-          >
-            <Button icon={<UploadOutlined />}>Select File</Button>
-          </Upload>
-          <Button
-            type="primary"
-            onClick={}
-            disabled={fileList.length === 0}
-          >
-            Upload
-          </Button> */}
+         
           <Button onClick={() => setIsRegisterVisible(true)}>
             View Register
           </Button>
@@ -272,7 +258,9 @@ title
                     "YYYY-MM-DD HH:mm"
                   )} | Status: ${election.status}`}
                 />
-                <Button type="default" onClick={}>
+                <Button type="default" onClick={
+                  
+                }>
                   Open Election
                 </Button>
                 <Button type="default" onClick={}>

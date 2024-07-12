@@ -1,14 +1,36 @@
 import { Card } from "antd";
 import { useAppContext } from "../context/AppProvider";
+import axios from "axios";
+import { useState } from "react";
 
 const ViewCandidates = () => {
   const { candidates } = useAppContext();
+  const [portfolioName, setPortfolioName] = useState("");
+
+  const fetchPortfolioById = async (portfolioId) => {
+    try {
+      const response = await axios.get(
+        `http://localhost:3000/api/portfolio/${portfolioId}`,
+        {
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${localStorage.getItem("token")}`,
+          },
+        }
+      );
+      const data = response.data;
+      setPortfolioName(data.name);
+    } catch (error) {
+      console.log("Error fetching portfolio:", error);
+    }
+  };
 
   const groupedCandidates = candidates.reduce((acc, candidate) => {
-    if (!acc[candidate.portfolio]) {
-      acc[candidate.portfolio] = [];
+    fetchPortfolioById(candidate.portfolio);
+    if (!acc[portfolioName]) {
+      acc[portfolioName] = [];
     }
-    acc[candidate.portfolio].push(candidate);
+    acc[portfolioName].push(candidate);
     return acc;
   }, {});
 
@@ -50,7 +72,7 @@ const ViewCandidates = () => {
                 >
                   <Card.Meta
                     title={candidate.name.toUpperCase()}
-                    description={candidate.portfolio.toUpperCase()}
+                    description={portfolioName.toUpperCase()}
                     style={{
                       display: "flex",
                       width: "100%",

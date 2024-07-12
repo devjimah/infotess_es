@@ -5,29 +5,32 @@ import {
   Form,
   Input,
   Select,
-  Upload,
   List,
   Pagination,
   Table,
+  message,
 } from "antd";
-import { UploadOutlined } from "@ant-design/icons";
 import { useNavigate } from "react-router-dom";
 import { useAppContext } from "../context/AppProvider";
 import axios from "axios";
 
-const { Option } = Select;
 const { Item } = Form;
 
 const PortfolioManager = () => {
-  const { candidates, setCandidates } = useAppContext();
-  const [portfolios, setPortfolios] = useState([]);
+  const { candidates } = useAppContext();
+  const { elections } = useAppContext();
+  const { portfolios, setPortfolios } = useAppContext();
   const [isPortfolioModalVisible, setIsPortfolioModalVisible] = useState(false);
   const [isCandidateModalVisible, setIsCandidateModalVisible] = useState(false);
   const [name, setName] = useState("");
   const [priority, setPriority] = useState(0);
+  const [portfolio, setPortfolio] = useState("");
+  const [election, setElection] = useState("");
+  const [ballot, setBallot] = useState(null);
+  const [image, setImage] = useState("");
+  const [gender, setGender] = useState("");
   const [candidateForm] = Form.useForm();
   const [currentPage, setCurrentPage] = useState(1);
-  const [portfolioName, setPortfolioName] = useState("");
   const pageSize = 5;
   const navigate = useNavigate();
 
@@ -39,29 +42,41 @@ const PortfolioManager = () => {
   //   localStorage.setItem("candidates", JSON.stringify(candidates));
   // }, [candidates]);
 
-  const fetchPortfolioById = async (portfolioId) => {
-    try {
-      const response = await axios.get(
-        `http://localhost:3000/api/portfolio/${portfolioId}`,
-        {
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${localStorage.getItem("token")}`,
-          },
-        }
-      );
-      const data = response.data;
-      setPortfolioName(data.name);
-    } catch (error) {
-      console.log("Error fetching portfolio:", error);
-    }
-  };
+  // const fetchPortfolioById = async (portfolioId) => {
+  //   try {
+  //     const response = await axios.get(
+  //       `http://localhost:3000/api/portfolio/${portfolioId}`,
+  //       {
+  //         headers: {
+  //           "Content-Type": "application/json",
+  //           Authorization: `Bearer ${localStorage.getItem("token")}`,
+  //         },
+  //       }
+  //     );
+  //     const data = response.data;
+  //     setPortfolioName(data.name);
+  //   } catch (error) {
+  //     console.log("Error fetching portfolio:", error);
+  //   }
+  // };
 
   const showPortfolioModal = () => setIsPortfolioModalVisible(true);
   const showCandidateModal = () => setIsCandidateModalVisible(true);
 
   const handlePortfolioCancel = () => setIsPortfolioModalVisible(false);
   const handleCandidateCancel = () => setIsCandidateModalVisible(false);
+
+  const handleChangePortfolio = (value) => {
+    setPortfolio(value);
+  };
+
+  const handleChangeElection = (value) => {
+    setElection(value);
+  };
+
+  const handleChange = (value) => {
+    setGender(value);
+  };
 
   const handlePortfolioSubmit = async () => {
     const formData = { name, priority };
@@ -110,25 +125,37 @@ const PortfolioManager = () => {
     fetchPortfolios();
   }, []);
 
-  const handleCandidateSubmit = async (values) => {
-    const imageFile = values.image.file;
-    if (imageFile) {
-      const imageBase64 = await getBase64(imageFile);
-      values.image = imageBase64;
+  const handleCandidateSubmit = async () => {
+    try {
+      const formData = {
+        name,
+        gender,
+        election,
+        portfolio,
+        ballot,
+        image,
+      };
+      await axios.post("http://localhost:3000/api/candidate", formData, {
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${localStorage.getItem("token")}`,
+        },
+      });
+      return message.success("Candidate added successfully");
+    } catch (error) {
+      console.error("Error adding candidate:", error);
+      message.error("Error adding candidate");
     }
-    setCandidates([...candidates, values]);
-    setIsCandidateModalVisible(false);
-    candidateForm.resetFields();
   };
 
-  const getBase64 = (file) => {
-    return new Promise((resolve, reject) => {
-      const reader = new FileReader();
-      reader.readAsDataURL(file);
-      reader.onload = () => resolve(reader.result);
-      reader.onerror = (error) => reject(error);
-    });
-  };
+  // const getBase64 = (file) => {
+  //   return new Promise((resolve, reject) => {
+  //     const reader = new FileReader();
+  //     reader.readAsDataURL(file);
+  //     reader.onload = () => resolve(reader.result);
+  //     reader.onerror = (error) => reject(error);
+  //   });
+  // };
 
   const onPageChange = (page) => {
     setCurrentPage(page);
@@ -179,15 +206,12 @@ const PortfolioManager = () => {
             >
               {candidates
                 .slice((currentPage - 1) * pageSize, currentPage * pageSize)
-                .map((candidate, index) => {
-                  fetchPortfolioById(candidate.portfolio);
-                  return (
-                    <List.Item key={index} className="flex justify-between">
-                      <span>{candidate.name}</span>
-                      <span>{portfolioName}</span>
-                    </List.Item>
-                  );
-                })}
+                .map((candidate, index) => (
+                  <List.Item key={index} className="flex justify-between">
+                    <span>{candidate.name}</span>
+                    <span>{candidate.portfolio}</span>
+                  </List.Item>
+                ))}
             </List>
             <Pagination
               current={currentPage}
@@ -261,39 +285,59 @@ const PortfolioManager = () => {
               { required: true, message: "Please enter the candidate's name" },
             ]}
           >
-            <Input />
+            <Input
+              type="text"
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+            />
           </Item>
           <Item
             name="gender"
             label="Gender"
             rules={[{ required: true, message: "Please select the gender" }]}
           >
-            <Select>
-              <Option value="Male">Male</Option>
-              <Option value="Female">Female</Option>
-            </Select>
+            <Select
+              value={gender}
+              onChange={handleChange}
+              options={[
+                {
+                  value: "Male",
+                  label: "Male",
+                },
+                {
+                  value: "Female",
+                  label: "Female",
+                },
+              ]}
+            />
           </Item>
           <Item
             name="election"
             label="Election"
             rules={[{ required: true, message: "Please select Election" }]}
           >
-            <Select>
-              <Option value="Male">elekkeee</Option>
-            </Select>
+            <Select
+              value={election}
+              onChange={handleChangeElection}
+              options={elections.map((election) => ({
+                value: election._id,
+                label: election.name,
+              }))}
+            />
           </Item>
           <Item
             name="portfolio"
             label="Portfolio"
             rules={[{ required: true, message: "Please select the portfolio" }]}
           >
-            <Select>
-              {portfolios.map((portfolio, index) => (
-                <Option key={index} value={portfolio._id}>
-                  {portfolio.name}
-                </Option>
-              ))}
-            </Select>
+            <Select
+              value={portfolio}
+              onChange={handleChangePortfolio}
+              options={portfolios.map((portfolio) => ({
+                value: portfolio._id,
+                label: portfolio.name,
+              }))}
+            />
           </Item>
           <Item
             name="ballotNumber"
@@ -302,21 +346,23 @@ const PortfolioManager = () => {
               { required: true, message: "Please enter the ballot number" },
             ]}
           >
-            <Input />
+            <Input
+              type="number"
+              value={ballot}
+              onChange={(e) => setBallot(e.target.value)}
+            />
           </Item>
           <Item
             name="image"
-            label="Image"
+            label="Image Url"
             valuePropName="file"
             rules={[{ required: true, message: "Please upload an image" }]}
           >
-            <Upload
-              listType="picture"
-              beforeUpload={() => false}
-              accept="image/*"
-            >
-              <Button icon={<UploadOutlined />}>Click to upload</Button>
-            </Upload>
+            <Input
+              type="text"
+              value={image}
+              onChange={(e) => setImage(e.target.value)}
+            />
           </Item>
           <Item>
             <Button type="primary" htmlType="submit" className="w-full">

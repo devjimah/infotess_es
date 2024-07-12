@@ -21,6 +21,54 @@ export const AppProvider = ({ children }) => {
     fetchCandidates();
   }, [candidates]);
 
+  const [elections, setElections] = useState([]);
+  useEffect(() => {
+    const fetchElections = async () => {
+      const response = await axios.get("http://localhost:3000/api/election", {
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${localStorage.getItem("token")}`,
+        },
+      });
+      const data = await response.data;
+      setElections(data);
+    };
+
+    fetchElections();
+  }, [elections]);
+
+  const [voters, setVoters] = useState([]);
+  useEffect(() => {
+    const fetchVoters = async () => {
+      const response = await axios.get("http://localhost:3000/api/voter", {
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${localStorage.getItem("token")}`,
+        },
+      });
+      const data = await response.data;
+      setVoters(data);
+    };
+
+    fetchVoters();
+  }, [voters]);
+
+  const [portfolios, setPortfolios] = useState([]);
+  useEffect(() => {
+    const fetchPortfolios = async () => {
+      const response = await axios.get("http://localhost:3000/api/portfolio", {
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${localStorage.getItem("token")}`,
+        },
+      });
+      const data = await response.data;
+      setPortfolios(data);
+    };
+
+    fetchPortfolios();
+  }, [portfolios]);
+
   const logout = () => {
     localStorage.removeItem("currentVoter");
   };
@@ -46,6 +94,11 @@ export const AppProvider = ({ children }) => {
         handleLogout,
         logout,
         candidates,
+        elections,
+        setElections,
+        voters,
+        portfolios,
+        setCandidates,
       }}
     >
       {children}

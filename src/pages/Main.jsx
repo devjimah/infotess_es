@@ -34,32 +34,6 @@ const PortfolioManager = () => {
   const pageSize = 5;
   const navigate = useNavigate();
 
-  // useEffect(() => {
-  //   localStorage.setItem("portfolios", JSON.stringify(portfolios));
-  // }, [portfolios]);
-
-  // useEffect(() => {
-  //   localStorage.setItem("candidates", JSON.stringify(candidates));
-  // }, [candidates]);
-
-  // const fetchPortfolioById = async (portfolioId) => {
-  //   try {
-  //     const response = await axios.get(
-  //       `http://localhost:3000/api/portfolio/${portfolioId}`,
-  //       {
-  //         headers: {
-  //           "Content-Type": "application/json",
-  //           Authorization: `Bearer ${localStorage.getItem("token")}`,
-  //         },
-  //       }
-  //     );
-  //     const data = response.data;
-  //     setPortfolioName(data.name);
-  //   } catch (error) {
-  //     console.log("Error fetching portfolio:", error);
-  //   }
-  // };
-
   const showPortfolioModal = () => setIsPortfolioModalVisible(true);
   const showCandidateModal = () => setIsCandidateModalVisible(true);
 
@@ -97,9 +71,7 @@ const PortfolioManager = () => {
     setName("");
     setPriority(0);
 
-    // setPortfolios([...portfolios, values]);
-    // setIsPortfolioModalVisible(false);
-    // portfolioForm.resetFields();
+    
   };
 
   useEffect(() => {
@@ -121,9 +93,9 @@ const PortfolioManager = () => {
         console.error("Error fetching portfolios:", error);
       }
     };
-
+  
     fetchPortfolios();
-  }, []);
+  }, [setPortfolios]);
 
   const handleCandidateSubmit = async () => {
     try {
@@ -148,14 +120,7 @@ const PortfolioManager = () => {
     }
   };
 
-  // const getBase64 = (file) => {
-  //   return new Promise((resolve, reject) => {
-  //     const reader = new FileReader();
-  //     reader.readAsDataURL(file);
-  //     reader.onload = () => resolve(reader.result);
-  //     reader.onerror = (error) => reject(error);
-  //   });
-  // };
+  
 
   const onPageChange = (page) => {
     setCurrentPage(page);

@@ -1,32 +1,53 @@
-import { Card } from "antd";
+import { Card, message } from "antd";
 import { useAppContext } from "../context/AppProvider";
 import axios from "axios";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
 const ViewCandidates = () => {
   const { candidates } = useAppContext();
-  const [portfolioName, setPortfolioName] = useState("");
+  const [portfolioNames, setPortfolioNames] = useState({});
+  const [loading, setLoading] = useState(true);
 
-  const fetchPortfolioById = async (portfolioId) => {
-    try {
-      const response = await axios.get(
-        `http://localhost:3000/api/portfolio/${portfolioId}`,
-        {
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${localStorage.getItem("token")}`,
-          },
-        }
-      );
-      const data = response.data;
-      setPortfolioName(data.name);
-    } catch (error) {
-      console.log("Error fetching portfolio:", error);
-    }
-  };
+  useEffect(() => {
+    const fetchAllPortfolios = async () => {
+      const portfolioIds = [
+        ...new Set(candidates.map((candidate) => candidate.portfolio)),
+      ];
+      const portfolioNamesMap = {};
+
+      try {
+        const requests = portfolioIds.map((id) =>
+          axios.get(`http://localhost:3000/api/portfolio/${id}`, {
+            headers: {
+              "Content-Type": "application/json",
+              Authorization: `Bearer ${localStorage.getItem("token")}`,
+            },
+          })
+        );
+
+        const responses = await Promise.all(requests);
+
+        responses.forEach((response, index) => {
+          portfolioNamesMap[portfolioIds[index]] = response.data.name;
+        });
+
+        setPortfolioNames(portfolioNamesMap);
+        setLoading(false);
+      } catch (error) {
+        message.error("Error fetching portfolio names");
+        console.error("Error fetching portfolio names:", error);
+      }
+    };
+
+    fetchAllPortfolios();
+  }, [candidates]);
+
+  if (loading) {
+    return <div>Loading...</div>;
+  }
 
   const groupedCandidates = candidates.reduce((acc, candidate) => {
-    fetchPortfolioById(candidate.portfolio);
+    const portfolioName = portfolioNames[candidate.portfolio];
     if (!acc[portfolioName]) {
       acc[portfolioName] = [];
     }
@@ -72,7 +93,7 @@ const ViewCandidates = () => {
                 >
                   <Card.Meta
                     title={candidate.name.toUpperCase()}
-                    description={portfolioName.toUpperCase()}
+                    description={portfolio.toUpperCase()}
                     style={{
                       display: "flex",
                       width: "100%",

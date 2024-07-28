@@ -1,120 +1,52 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button, Form, Input, message } from "antd";
 import axios from "axios";
+import PropTypes from "prop-types";
 
-const OTPScreen = () => {
-  const [STUDENTID, setSTUDENTID] = useState("");
-  const [isOtpGenerated, setIsOtpGenerated] = useState(false);
-  const [voterOTP, setVoterOTP] = useState("");
-  const [isOfficialLoggedIn, setIsOfficialLoggedIn] = useState(false);
-  const [officialID, setOfficialID] = useState("");
+const OfficialLogin = ({ onLogin }) => {
+  const [officialId, setOfficialId] = useState("");
   const [officialPassword, setOfficialPassword] = useState("");
-
-  const generateAlphanumericOTP = (length) => {
-    const characters =
-      "ABCDEFGHIJKLMNPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz123456789";
-    let result = "";
-    for (let i = 0; i < length; i++) {
-      result += characters.charAt(
-        Math.floor(Math.random() * characters.length)
-      );
-    }
-    return result;
-  };
 
   const handleOfficialLogin = async () => {
     try {
-      const formData = { STUDENTID: officialID, password: officialPassword };
       const response = await axios.post(
-        "http://localhost:3000/api/auth/official/login",
-        formData,
-        {
-          headers: {
-            "Content-Type": "application/json",
-          },
-        }
+        `${import.meta.env.VITE_API_URL}/auth/official/login`,
+        { STUDENTID: officialId, password: officialPassword },
+        { headers: { "Content-Type": "application/json" } }
       );
-      const data = response.data;
-      console.log(data);
-      const token = data.token;
+      const { token } = response.data;
       localStorage.setItem("officialToken", token);
-
       message.success("Login successful");
-      setIsOfficialLoggedIn(true);
+      onLogin();
     } catch (error) {
-      console.log(error);
-      message.error("Login failed");
+      console.error("Login error:", error);
+      message.error("Login failed. Please check your credentials.");
     }
   };
 
-  const generateOTP = async () => {
-    try {
-      const formData = { STUDENTID, OTP: generateAlphanumericOTP(5) };
-      const response = await axios.post(
-        "http://localhost:3000/api/auth/register/voter",
-        formData,
-        {
-          headers: {
-            "Content-Type": "application/json",
-          },
-        }
-      );
-      const data = response.data;
-      console.log(data);
-      setVoterOTP(data.updatedVoter.OTP);
-      message.success("OTP generated successfully.");
-      setIsOtpGenerated(true);
-    } catch (error) {
-      console.log(error);
-      setIsOtpGenerated(false);
-      message.error("OTP generation failed.");
-    }
-  };
-
-  // const generateOtp = () => {
-  //   const storedRegister =
-  //     JSON.parse(localStorage.getItem("voterRegister")) || [];
-  //   const voterIndex = storedRegister.findIndex(
-  //     (voter) =>
-  //       String(voter["STUDENT ID"]).trim().toLowerCase() ===
-  //       studentID.trim().toLowerCase()
-  //   );
-
-  //   if (voterIndex !== -1) {
-  //     const voter = storedRegister[voterIndex];
-  //     if (voter.otp) {
-  //       // OTP already exists for this student ID
-  //       setOtp(voter.otp);
-  //       message.info("OTP already exists for this Student ID.");
-  //     } else {
-  //       // Generate new OTP
-  //       const generatedOtp = generateAlphanumericOTP(5);
-  //       setOtp(generatedOtp);
-  //       voter.otp = generatedOtp;
-  //       storedRegister[voterIndex] = voter;
-  //       localStorage.setItem("voterRegister", JSON.stringify(storedRegister));
-  //       message.success("OTP generated successfully.");
-  //     }
-  //     setIsOtpGenerated(true);
-  //   } else {
-  //     message.error("Student ID not found in the register.");
-  //     setIsOtpGenerated(false);
-  //   }
-  // };
-
-  return !isOfficialLoggedIn ? (
+  return (
     <div className="flex justify-center items-center h-screen">
       <div className="bg-white p-8 rounded shadow-lg max-w-md w-full flex flex-col items-center">
         <h2 className="text-2xl mb-4">Official Login</h2>
         <Form layout="vertical" className="w-full flex flex-col items-center">
-          <Form.Item label="Official ID">
+          <Form.Item
+            label="Official ID"
+            name="officialId"
+            rules={[
+              { required: true, message: "Please enter your Official ID" },
+            ]}
+          >
             <Input
-              value={officialID}
-              onChange={(e) => setOfficialID(e.target.value)}
+              value={officialId}
+              onChange={(e) => setOfficialId(e.target.value)}
               placeholder="Enter Official ID"
             />
           </Form.Item>
-          <Form.Item label="Password">
+          <Form.Item
+            label="Password"
+            name="password"
+            rules={[{ required: true, message: "Please enter your password" }]}
+          >
             <Input.Password
               value={officialPassword}
               onChange={(e) => setOfficialPassword(e.target.value)}
@@ -133,20 +65,76 @@ const OTPScreen = () => {
         </Form>
       </div>
     </div>
-  ) : (
+  );
+};
+
+OfficialLogin.propTypes = {
+  onLogin: PropTypes.func.isRequired,
+};
+
+const OTPGenerator = () => {
+  const [studentId, setStudentId] = useState("");
+  const [isOtpGenerated, setIsOtpGenerated] = useState(false);
+  const [voterOTP, setVoterOTP] = useState("");
+
+  const generateOTP = async () => {
+    try {
+      const response = await axios.post(
+        `${import.meta.env.VITE_API_URL}/auth/register/voter`,
+        { STUDENTID: studentId },
+        {
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${localStorage.getItem("officialToken")}`,
+          },
+        }
+      );
+
+      if (response.data.message === "OTP already generated") {
+        message.warning(
+          "An OTP has already been generated for this Student ID."
+        );
+        setIsOtpGenerated(false);
+        setVoterOTP("");
+      } else {
+        const { updatedVoter } = response.data;
+        setVoterOTP(updatedVoter.OTP);
+        setIsOtpGenerated(true);
+        message.success("OTP generated successfully.");
+      }
+    } catch (error) {
+      console.error("OTP generation error:", error);
+      setIsOtpGenerated(false);
+      if (
+        error.response &&
+        error.response.data &&
+        error.response.data.message
+      ) {
+        message.error(error.response.data.message);
+      } else {
+        message.error("OTP generation failed. Please try again.");
+      }
+    }
+  };
+
+  return (
     <div className="flex justify-center items-center h-screen">
       <div className="bg-white p-8 rounded shadow-lg max-w-md w-full flex flex-col items-center">
         <h2 className="text-2xl mb-4">Generate OTP</h2>
         <Form layout="vertical" className="w-58" onFinish={generateOTP}>
-          <Form.Item label="Student ID">
+          <Form.Item
+            label="Student ID"
+            name="STUDENTID"
+            rules={[{ required: true, message: "Please enter the Student ID" }]}
+          >
             <Input
-              value={STUDENTID}
-              onChange={(e) => setSTUDENTID(e.target.value)}
+              value={studentId}
+              onChange={(e) => setStudentId(e.target.value)}
               placeholder="Enter student ID"
             />
           </Form.Item>
           <Form.Item>
-            <Button type="supmi" htmlType="submit" className="w-full">
+            <Button type="primary" htmlType="submit" className="w-full">
               Generate OTP
             </Button>
           </Form.Item>
@@ -154,13 +142,31 @@ const OTPScreen = () => {
         {isOtpGenerated && (
           <div className="mt-4">
             <h3>
-              Your OTP is: <span style={{ color: "red" }}>{voterOTP}</span>
+              Your OTP is: <span className="font-bold">{voterOTP}</span>
             </h3>
-            <p>Please use this OTP to login.</p>
+            <p>Please use this OTP to login. It can only be used once.</p>
           </div>
         )}
       </div>
     </div>
+  );
+};
+
+const OTPScreen = () => {
+  const [isOfficialLoggedIn, setIsOfficialLoggedIn] = useState(false);
+
+  useEffect(() => {
+    const token = localStorage.getItem("officialToken");
+    if (token) {
+      // Optionally, you could verify the token with the backend here
+      setIsOfficialLoggedIn(true);
+    }
+  }, []);
+
+  return isOfficialLoggedIn ? (
+    <OTPGenerator />
+  ) : (
+    <OfficialLogin onLogin={() => setIsOfficialLoggedIn(true)} />
   );
 };
 

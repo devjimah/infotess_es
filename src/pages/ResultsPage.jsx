@@ -10,23 +10,6 @@ Chart.register(...registerables);
 const UserChoicesChart = ({ candidates }) => {
   const [chartData, setChartData] = useState(null);
 
-  useEffect(() => {
-    const fetchVotesAndUpdateChart = () => {
-      const storedVotes = candidates.map((candidate) => {
-        candidate.votes;
-      });
-      if (storedVotes) {
-        const votes = JSON.parse(storedVotes);
-        setChartData(processData(candidates, votes));
-      }
-    };
-
-    fetchVotesAndUpdateChart();
-    const intervalId = setInterval(fetchVotesAndUpdateChart, 5000); // Auto-reload every 5 seconds
-
-    return () => clearInterval(intervalId); // Cleanup interval on unmount
-  }, [candidates]);
-
   const processData = (candidates, votes) => {
     const candidateCounts = candidates.reduce((acc, candidate) => {
       acc[candidate.name] = 0;
@@ -83,6 +66,21 @@ const UserChoicesChart = ({ candidates }) => {
     };
   };
 
+  useEffect(() => {
+    const fetchVotesAndUpdateChart = () => {
+      // Assuming votes are stored in the candidate objects as an array of strings
+      const storedVotes = candidates.flatMap(
+        (candidate) => candidate.votes || []
+      );
+      setChartData(processData(candidates, storedVotes));
+    };
+
+    fetchVotesAndUpdateChart();
+    const intervalId = setInterval(fetchVotesAndUpdateChart, 5000); // Auto-reload every 5 seconds
+
+    return () => clearInterval(intervalId); // Cleanup interval on unmount
+  }, [candidates]);
+
   return (
     <Card className="p-4">
       {chartData ? (
@@ -100,7 +98,7 @@ const UserChoicesChart = ({ candidates }) => {
           />
         </div>
       ) : (
-        <p>No votes has been recorded yet.</p>
+        <p>No votes have been recorded yet.</p>
       )}
     </Card>
   );
@@ -110,8 +108,9 @@ UserChoicesChart.propTypes = {
   candidates: PropTypes.arrayOf(
     PropTypes.shape({
       name: PropTypes.string.isRequired,
+      votes: PropTypes.array.isRequired, // Ensure votes is an array
     })
-  ),
+  ).isRequired,
 };
 
 export default UserChoicesChart;

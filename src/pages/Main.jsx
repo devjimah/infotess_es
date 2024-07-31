@@ -55,34 +55,46 @@ const PortfolioManager = () => {
   const handlePortfolioSubmit = async () => {
     const formData = { name, priority };
 
-    const response = await axios.get(
-      "http://localhost:3000/api/portfolio",
-      formData,
-      {
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${localStorage.getItem("token")}`,
-        },
+    try {
+      const response = await axios.post(
+        "http://localhost:3000/api/portfolios",
+        formData,
+        {
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${localStorage.getItem("adminToken")}`,
+          },
+        }
+      );
+
+      const data = response.data;
+      console.log(data);
+      setName("");
+      setPriority(0);
+      message.success("Portfolio created successfully");
+    } catch (error) {
+      console.error("Error submitting portfolio:", error);
+      if (error.response) {
+        console.log("Server responded with:", error.response.status);
+        console.log("Response data:", error.response.data);
+      } else if (error.request) {
+        console.log("Request made but no response received:", error.request);
+      } else {
+        console.log("Error setting up request:", error.message);
       }
-    );
-
-    const data = response.data;
-    console.log(data);
-    setName("");
-    setPriority(0);
-
-    
+      message.error("Error creating portfolio");
+    }
   };
 
   useEffect(() => {
     const fetchPortfolios = async () => {
       try {
         const response = await axios.get(
-          "http://localhost:3000/api/portfolio",
+          "http://localhost:3000/api/portfolios",
           {
             headers: {
               "Content-Type": "application/json",
-              Authorization: `Bearer ${localStorage.getItem("token")}`,
+              Authorization: `Bearer ${localStorage.getItem("adminToken")}`,
             },
           }
         );
@@ -91,6 +103,14 @@ const PortfolioManager = () => {
         console.log(data);
       } catch (error) {
         console.error("Error fetching portfolios:", error);
+        if (error.response) {
+          console.log("Server responded with:", error.response.status);
+          console.log("Response data:", error.response.data);
+        } else if (error.request) {
+          console.log("Request made but no response received:", error.request);
+        } else {
+          console.log("Error setting up request:", error.message);
+        }
       }
     };
   
@@ -110,17 +130,23 @@ const PortfolioManager = () => {
       await axios.post("http://localhost:3000/api/candidate", formData, {
         headers: {
           "Content-Type": "application/json",
-          Authorization: `Bearer ${localStorage.getItem("token")}`,
+          Authorization: `Bearer ${localStorage.getItem("adminToken")}`,
         },
       });
-      return message.success("Candidate added successfully");
+      message.success("Candidate added successfully");
     } catch (error) {
       console.error("Error adding candidate:", error);
+      if (error.response) {
+        console.log("Server responded with:", error.response.status);
+        console.log("Response data:", error.response.data);
+      } else if (error.request) {
+        console.log("Request made but no response received:", error.request);
+      } else {
+        console.log("Error setting up request:", error.message);
+      }
       message.error("Error adding candidate");
     }
   };
-
-  
 
   const onPageChange = (page) => {
     setCurrentPage(page);
@@ -265,14 +291,8 @@ const PortfolioManager = () => {
               value={gender}
               onChange={handleChange}
               options={[
-                {
-                  value: "Male",
-                  label: "Male",
-                },
-                {
-                  value: "Female",
-                  label: "Female",
-                },
+                { value: "Male", label: "Male" },
+                { value: "Female", label: "Female" },
               ]}
             />
           </Item>
@@ -286,7 +306,7 @@ const PortfolioManager = () => {
               onChange={handleChangeElection}
               options={elections.map((election) => ({
                 value: election._id,
-                label: election.name,
+                label: election.title,
               }))}
             />
           </Item>
@@ -305,10 +325,10 @@ const PortfolioManager = () => {
             />
           </Item>
           <Item
-            name="ballotNumber"
+            name="ballot"
             label="Ballot Number"
             rules={[
-              { required: true, message: "Please enter the ballot number" },
+              { required: true, message: "Please enter the Ballot Number" },
             ]}
           >
             <Input
@@ -319,9 +339,8 @@ const PortfolioManager = () => {
           </Item>
           <Item
             name="image"
-            label="Image Url"
-            valuePropName="file"
-            rules={[{ required: true, message: "Please upload an image" }]}
+            label="Candidate Image"
+            rules={[{ required: true, message: "Please enter the image url" }]}
           >
             <Input
               type="text"
@@ -330,8 +349,8 @@ const PortfolioManager = () => {
             />
           </Item>
           <Item>
-            <Button type="primary" htmlType="submit" className="w-full">
-              Add
+            <Button type="primary" htmlType="submit">
+              Add Candidate
             </Button>
           </Item>
         </Form>

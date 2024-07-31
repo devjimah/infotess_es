@@ -11,8 +11,9 @@ const ViewCandidates = () => {
   useEffect(() => {
     const fetchAllPortfolios = async () => {
       const portfolioIds = [
-        ...new Set(candidates.map((candidate) => candidate.portfolio)),
+        ...new Set(candidates.map((candidate) => candidate.portfolioId)),
       ];
+
       const portfolioNamesMap = {};
 
       try {
@@ -20,7 +21,7 @@ const ViewCandidates = () => {
           axios.get(`http://localhost:3000/api/portfolio/${id}`, {
             headers: {
               "Content-Type": "application/json",
-              Authorization: `Bearer ${localStorage.getItem("token")}`,
+              Authorization: `Bearer ${localStorage.getItem("adminToken")}`,
             },
           })
         );
@@ -28,9 +29,9 @@ const ViewCandidates = () => {
         const responses = await Promise.all(requests);
 
         responses.forEach((response, index) => {
-          portfolioNamesMap[portfolioIds[index]] = response.data.name;
+          portfolioNamesMap[portfolioIds[index]] = response?.data?.name;
         });
-
+        console.log(portfolioNamesMap);
         setPortfolioNames(portfolioNamesMap);
         setLoading(false);
       } catch (error) {
@@ -93,7 +94,7 @@ const ViewCandidates = () => {
                 >
                   <Card.Meta
                     title={candidate.name.toUpperCase()}
-                    description={portfolio.toUpperCase()}
+                    description={candidate.portfolio.toUpperCase()}
                     style={{
                       display: "flex",
                       width: "100%",

@@ -29,7 +29,7 @@ function Login() {
       const data = response.data;
       console.log(data);
       const token = data.token;
-      localStorage.setItem("token", token);
+      localStorage.setItem("adminToken", token);
       setIsLoggedIn(true);
 
       message.success("Login successful");

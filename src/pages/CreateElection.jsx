@@ -12,6 +12,7 @@ import {
 } from "antd";
 import moment from "moment";
 import axios from "axios";
+import UploadRegister from "./UploadRegister";
 
 const { Step } = Steps;
 
@@ -24,6 +25,7 @@ function CreateElection() {
   const [isRegisterVisible, setIsRegisterVisible] = useState(false);
   const [isModalVisible, setIsModalVisible] = useState(false);
   const [title, setTitle] = useState("");
+  // const [candidates, setCandidates] = useState("");
   const [startTime, setStartTime] = useState(null);
   const [endTime, setEndTime] = useState(null);
   const [newEndTime, setNewEndTime] = useState(null);
@@ -40,55 +42,59 @@ function CreateElection() {
     }
   };
 
- useEffect(() => {
-   const checkElectionStatus = async () => {
-     const currentTime = new Date();
+  useEffect(() => {
+    console.log("extendElectionId updated:", extendElectionId);
+  }, [extendElectionId]);
 
-     for (const election of elections) {
-       const endTime = new Date(election.endTime);
+  useEffect(() => {
+    const checkElectionStatus = async () => {
+      const currentTime = new Date();
 
-       // Check if the current time is equal to or past the end time
-       if (currentTime >= endTime && election.status !== "ended") {
-         try {
-           // Make a PUT request to update the election status
-           await axios.put(
-             `${API_BASE_URL}/election/status/${election._id}`,
-             { status: "ended" },
-             {
-               headers: {
-                 "Content-Type": "application/json",
-                 Authorization: `Bearer ${localStorage.getItem("token")}`,
-               },
-             }
-           );
+      for (const election of elections) {
+        const endTime = new Date(election.endTime);
 
-           // Refresh the elections
-           const response = await axios.get(`${API_BASE_URL}/election`, {
-             headers: {
-               Authorization: `Bearer ${localStorage.getItem("token")}`,
-             },
-           });
+        // Check if the current time is equal to or past the end time
+        if (currentTime >= endTime && election.status !== "ended") {
+          try {
+            // Make a PUT request to update the election status
+            await axios.put(
+              `${API_BASE_URL}/election/status/${election._id}`,
+              { status: "ended" },
+              {
+                headers: {
+                  "Content-Type": "application/json",
+                  Authorization: `Bearer ${localStorage.getItem("adminToken")}`,
+                },
+              }
+            );
 
-           setElections(response.data);
+            // Refresh the elections
+            const response = await axios.get(`${API_BASE_URL}/election`, {
+              headers: {
+                Authorization: `Bearer ${localStorage.getItem("adminToken")}`,
+              },
+            });
 
-           // Refresh the page
-           window.location.reload();
-         } catch (error) {
-           console.error("Error updating election status:", error);
-         }
-       }
-     }
-   };
+            setElections(response.data);
 
-   // Run the check immediately
-   checkElectionStatus();
+            // Refresh the page
+            window.location.reload();
+          } catch (error) {
+            console.error("Error updating election status:", error);
+          }
+        }
+      }
+    };
 
-   // Set up an interval to run the check every minute
-   const intervalId = setInterval(checkElectionStatus, 60000);
+    // Run the check immediately
+    checkElectionStatus();
 
-   // Clean up the interval when the component unmounts
-   return () => clearInterval(intervalId);
- }, [elections]);
+    // Set up an interval to run the check every minute
+    const intervalId = setInterval(checkElectionStatus, 60000);
+
+    // Clean up the interval when the component unmounts
+    return () => clearInterval(intervalId);
+  }, [elections]);
 
   const handlePrevStep = () => {
     setCurrentStep(currentStep - 1);
@@ -100,14 +106,15 @@ function CreateElection() {
     try {
       const formData = {
         title,
-        startDate: startTime.toISOString(),
-        endDate: endTime.toISOString(),
+        startTime: startTime.toISOString(),
+        endTime: endTime.toISOString(),
+        // candidates: candidates.map((candidate) => ({ name: candidate })),
       };
 
       const response = await axios.post(`${API_BASE_URL}/election`, formData, {
         headers: {
           "Content-Type": "application/json",
-          Authorization: `Bearer ${localStorage.getItem("token")}`,
+          Authorization: `Bearer ${localStorage.getItem("adminToken")}`,
         },
       });
 
@@ -115,6 +122,7 @@ function CreateElection() {
       setTitle("");
       setStartTime(null);
       setEndTime(null);
+      // setCandidates([]);
       message.success("Election created successfully");
     } catch (error) {
       message.error("An error occurred. Please try again.");
@@ -128,21 +136,20 @@ function CreateElection() {
         return;
       }
 
-      if (election.status === "completed") {
-        message.error("Election is already closed");
-        return;
-      }
+      // Removed the check for "completed" status
 
       const now = new Date();
       const electionEndTime = new Date(election.endTime);
 
       if (now > electionEndTime) {
-        message.error("Election has ended, Please extend the election time");
+        message.error(
+          "Election has ended. Please extend the election time first."
+        );
         return;
       }
 
       if (now < election.startTime) {
-        message.error("Can not open election before start time");
+        message.error("Cannot open election before start time");
         return;
       }
 
@@ -157,7 +164,7 @@ function CreateElection() {
         {
           headers: {
             "Content-Type": "application/json",
-            Authorization: `Bearer ${localStorage.getItem("token")}`,
+            Authorization: `Bearer ${localStorage.getItem("adminToken")}`,
           },
         }
       );
@@ -165,7 +172,7 @@ function CreateElection() {
       // Refresh elections
       const response = await axios.get(`${API_BASE_URL}/election`, {
         headers: {
-          Authorization: `Bearer ${localStorage.getItem("token")}`,
+          Authorization: `Bearer ${localStorage.getItem("adminToken")}`,
         },
       });
 
@@ -197,7 +204,7 @@ function CreateElection() {
       await axios.post(`${API_BASE_URL}/auth/register/official`, formData, {
         headers: {
           "Content-Type": "application/json",
-          Authorization: `Bearer ${localStorage.getItem("token")}`,
+          Authorization: `Bearer ${localStorage.getItem("adminToken")}`,
         },
       });
 
@@ -205,7 +212,7 @@ function CreateElection() {
       const newOfficials = await axios.get(`${API_BASE_URL}/official`, {
         headers: {
           "Content-Type": "application/json",
-          Authorization: `Bearer ${localStorage.getItem("token")}`,
+          Authorization: `Bearer ${localStorage.getItem("adminToken")}`,
         },
       });
 
@@ -224,39 +231,72 @@ function CreateElection() {
     }
   };
 
-  const handleExtendElection = async (election) => {
+  const handleExtendElection = async () => {
+    if (!extendElectionId) {
+      message.error("No election selected for extension");
+      return;
+    }
+
+    if (!newEndTime) {
+      message.error("Please select a new end time");
+      return;
+    }
+
     try {
-      const electionId = election._id; // Fix the access to the election ID
-      const formData = {
-        endTime: newEndTime.toISOString(),
-      };
+      const formData = { newEndTime: newEndTime.toISOString() };
 
       await axios.put(
-        `${API_BASE_URL}/election/extend/${electionId}`,
+        `${API_BASE_URL}/election/extend/${extendElectionId}`,
         formData,
         {
           headers: {
             "Content-Type": "application/json",
-            Authorization: `Bearer ${localStorage.getItem("token")}`,
+            Authorization: `Bearer ${localStorage.getItem("adminToken")}`,
           },
         }
       );
 
-      // Refresh elections
-      const response = await axios.get(`${API_BASE_URL}/election`, {
+      const refreshResponse = await axios.get(`${API_BASE_URL}/election`, {
         headers: {
-          Authorization: `Bearer ${localStorage.getItem("token")}`,
+          Authorization: `Bearer ${localStorage.getItem("adminToken")}`,
         },
       });
 
-      setElections(response.data.elections);
+      setElections(refreshResponse.data);
       message.success("Election extended successfully");
       setIsModalVisible(false);
+      setExtendElectionId(null);
+      setNewEndTime(null);
     } catch (error) {
-      message.error("An error occurred. Please try again.");
+      console.error("Error extending election:", error.response?.data || error);
+      message.error(
+        error.response?.data?.message || "An error occurred. Please try again."
+      );
     }
   };
 
+  // Add this function to periodically check and update election statuses
+  const updateElectionStatuses = async () => {
+    try {
+      const response = await axios.get(
+        `${API_BASE_URL}/election/status/${extendElectionId}`,
+        {
+          headers: {
+            Authorization: `Bearer ${localStorage.getItem("adminToken")}`,
+          },
+        }
+      );
+      setElections(response.data);
+    } catch (error) {
+      console.error("Error updating election statuses:", error);
+    }
+  };
+
+  // Add this useEffect to run the status update periodically
+  useEffect(() => {
+    const intervalId = setInterval(updateElectionStatuses, 60000); // Check every minute
+    return () => clearInterval(intervalId);
+  }, []);
   const handleGetVotersRegister = async () => {
     try {
       const response = await axios.get("http://localhost:3000/api/voter");
@@ -277,7 +317,7 @@ function CreateElection() {
     try {
       const response = await axios.get(`${API_BASE_URL}/election`, {
         headers: {
-          Authorization: `Bearer ${localStorage.getItem("token")}`,
+          Authorization: `Bearer ${localStorage.getItem("adminToken")}`,
         },
       });
 
@@ -343,6 +383,7 @@ function CreateElection() {
       title: "Voter Register",
       content: (
         <div className="flex mt-4 items-center space-x-4">
+          <UploadRegister />
           <Button onClick={handleGetVotersRegister}>View Register</Button>
         </div>
       ),
@@ -366,7 +407,7 @@ function CreateElection() {
             <DatePicker
               showTime={{ format: "HH:mm" }}
               format="YYYY-MM-DD HH:mm"
-              value={startTime ? moment(startTime) : null} // Convert to moment object
+              value={startTime ? startTime : null} // Convert to  object
               onChange={(date) => setStartTime(date)} // Update setStartTime function
             />
           </Form.Item>
@@ -374,14 +415,14 @@ function CreateElection() {
             <DatePicker
               showTime={{ format: "HH:mm" }}
               format="YYYY-MM-DD HH:mm"
-              value={endTime ? moment(endTime) : null} // Convert to moment object
+              value={endTime ? endTime : null} // Convert to moment object
               onChange={(date) => setEndTime(date)} // Update setEndTime function
             />
           </Form.Item>
           <Button
             type="primary"
             onClick={handleCreateElection}
-            disabled={!title || !startTime || !endTime}
+            disabled={!title || !startTime || !endTime }
           >
             Create Election
           </Button>
@@ -417,7 +458,6 @@ function CreateElection() {
                   onClick={() => {
                     setIsModalVisible(true);
                     setExtendElectionId(election._id);
-                    console.log(extendElectionId);
                   }}
                 >
                   Extend Time
@@ -468,7 +508,7 @@ function CreateElection() {
       <Modal
         title="Extend Election Time"
         open={isModalVisible}
-        onOk={() => handleExtendElection(extendElectionId)}
+        onOk={handleExtendElection}
         onCancel={handleExtendCancel}
       >
         <Form layout="vertical">
@@ -476,7 +516,7 @@ function CreateElection() {
             <DatePicker
               showTime={{ format: "HH:mm" }}
               format="YYYY-MM-DD HH:mm"
-              value={newEndTime ? moment(newEndTime) : null}
+              value={newEndTime ? newEndTime : null}
               onChange={(date) => setNewEndTime(date)}
             />
           </Form.Item>

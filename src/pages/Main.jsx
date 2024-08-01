@@ -113,7 +113,7 @@ const PortfolioManager = () => {
         }
       }
     };
-  
+
     fetchPortfolios();
   }, [setPortfolios]);
 

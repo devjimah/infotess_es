@@ -1,59 +1,66 @@
 import { useState, useEffect } from "react";
-import { Card, Button, message } from "antd";
+import { Card, Button, message, Spin } from "antd";
 import { Bar } from "react-chartjs-2";
 import { Chart, registerables } from "chart.js";
 import { jsPDF } from "jspdf";
+import axios from "axios";
 
-// Register Chart.js components
 Chart.register(...registerables);
 
-const UserChoicesChart = () => {
-  const [chartData, setChartData] = useState(null);
-  const [candidates, setCandidates] = useState([]);
+const ResultsPage = () => {
+ const [chartData, setChartData] = useState(null);
+ const [electionData, setElectionData] = useState(null);
+ const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    try {
-      // Load candidates from localStorage
-      const storedCandidates = JSON.parse(
-        localStorage.getItem("candidates") || "[]"
-      );
-      setCandidates(storedCandidates);
-    } catch (error) {
-      console.error("Failed to load candidates from localStorage:", error);
-      message.error("Failed to load election results.");
-    }
-  }, []);
 
-  useEffect(() => {
-    if (candidates.length > 0) {
-      setChartData(processData(candidates));
-    }
-  }, [candidates]);
+ useEffect(() => {
+ 
+   fetchElectionResults();
+ },[]);
 
-  const processData = (candidates) => {
-    const portfolios = {};
-    candidates.forEach((candidate) => {
-      if (!portfolios[candidate.portfolio]) {
-        portfolios[candidate.portfolio] = [];
-      }
-      portfolios[candidate.portfolio].push(candidate);
-    });
+ const fetchElectionResults = async () => {
+   try {
+     console.log(
+       `Fetching results from: ${
+         import.meta.env.VITE_API_URL
+       }/results/`
+     );
+     const response = await axios.get(
+       `${import.meta.env.VITE_API_URL}/results/`,
+       {
+         headers: {
+           Authorization: `Bearer ${localStorage.getItem("adminToken")}`,
+         },
+       }
+     );
+     setElectionData(response.data);
+     console.log(response.data)
+     setChartData(processData(response.data.results));
+     setLoading(false);
+   } catch (error) {
+     console.error("Failed to fetch election results:", error);
+     message.error("Failed to load election results.");
+     setLoading(false);
+   }
+ };
 
+
+  const processData = (results) => {
     const labels = [];
     const data = [];
     const colors = [];
 
-    Object.entries(portfolios).forEach(([portfolio, portfolioCandidates]) => {
-      if (portfolioCandidates.length === 1) {
-        const candidate = portfolioCandidates[0];
-        labels.push(`${portfolio} - Yes`, `${portfolio} - No`);
-        data.push(candidate.votes?.filter((v) => v === "Yes").length || 0);
-        data.push(candidate.votes?.filter((v) => v === "No").length || 0);
+    results.forEach((portfolio) => {
+      if (portfolio.candidates.length === 1) {
+        const candidate = portfolio.candidates[0];
+        labels.push(`${portfolio.name} - Yes`, `${portfolio.name} - No`);
+        data.push(candidate.yesNoVotes?.yes || 0);
+        data.push(candidate.yesNoVotes?.no || 0);
         colors.push("#4CAF50", "#F44336");
       } else {
-        portfolioCandidates.forEach((candidate) => {
-          labels.push(`${portfolio} - ${candidate.name}`);
-          data.push(candidate.votes?.length || 0);
+        portfolio.candidates.forEach((candidate) => {
+          labels.push(`${portfolio.name} - ${candidate.name}`);
+          data.push(candidate.votes || 0);
           colors.push("#" + Math.floor(Math.random() * 16777215).toString(16));
         });
       }
@@ -74,15 +81,17 @@ const UserChoicesChart = () => {
   };
 
   const exportToPDF = () => {
-    if (!chartData) {
+    if (!chartData || !electionData) {
       message.error("No data available to export.");
       return;
     }
 
     const doc = new jsPDF();
-    doc.text("Election Results", 10, 10);
+    doc.text(`Election Results: ${electionData.electionName}`, 10, 10);
+    doc.text(`Total Votes: ${electionData.totalVotes}`, 10, 20);
+    doc.text(`Status: ${electionData.status}`, 10, 30);
 
-    let yOffset = 20;
+    let yOffset = 40;
     chartData.labels.forEach((label, index) => {
       const votes = chartData.datasets[0].data[index];
       doc.text(`${label}: ${votes} votes`, 10, yOffset);
@@ -92,8 +101,17 @@ const UserChoicesChart = () => {
     doc.save("election_results.pdf");
   };
 
+  if (loading) {
+    return (
+      <div className="flex justify-center items-center h-screen">
+        <Spin size="large" />
+      </div>
+    );
+  }
+
   return (
     <Card className="p-4">
+      <h1 className="text-2xl font-bold mb-4 text-center">Election Results</h1>
       {chartData ? (
         <div>
           <Bar
@@ -107,6 +125,25 @@ const UserChoicesChart = () => {
               },
             }}
           />
+          <div className="mt-4">
+            <p>
+              <strong>Election Name:</strong> {electionData.electionName}
+            </p>
+            <p>
+              <strong>Total Votes:</strong> {electionData.totalVotes}
+            </p>
+            <p>
+              <strong>Status:</strong> {electionData.status}
+            </p>
+            <p>
+              <strong>Start Time:</strong>{" "}
+              {new Date(electionData.startTime).toLocaleString()}
+            </p>
+            <p>
+              <strong>End Time:</strong>{" "}
+              {new Date(electionData.endTime).toLocaleString()}
+            </p>
+          </div>
           <Button
             onClick={exportToPDF}
             type="primary"
@@ -122,4 +159,4 @@ const UserChoicesChart = () => {
   );
 };
 
-export default UserChoicesChart;
+export default ResultsPage;

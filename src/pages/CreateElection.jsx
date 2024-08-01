@@ -4,6 +4,7 @@ import {
   Form,
   Input,
   DatePicker,
+  TimePicker,
   message,
   Steps,
   List,
@@ -25,10 +26,9 @@ function CreateElection() {
   const [isRegisterVisible, setIsRegisterVisible] = useState(false);
   const [isModalVisible, setIsModalVisible] = useState(false);
   const [title, setTitle] = useState("");
-  // const [candidates, setCandidates] = useState("");
   const [startTime, setStartTime] = useState(null);
   const [endTime, setEndTime] = useState(null);
-  const [newEndTime, setNewEndTime] = useState(null);
+  const [newEndTime, setNewEndTime] = useState();
   const [elections, setElections] = useState([]);
   const [voters, setVoters] = useState([]);
   const [extendElectionId, setExtendElectionId] = useState("");
@@ -86,9 +86,6 @@ function CreateElection() {
       }
     };
 
-    // Run the check immediately
-    checkElectionStatus();
-
     // Set up an interval to run the check every minute
     const intervalId = setInterval(checkElectionStatus, 60000);
 
@@ -108,7 +105,6 @@ function CreateElection() {
         title,
         startTime: startTime.toISOString(),
         endTime: endTime.toISOString(),
-        // candidates: candidates.map((candidate) => ({ name: candidate })),
       };
 
       const response = await axios.post(`${API_BASE_URL}/election`, formData, {
@@ -243,7 +239,7 @@ function CreateElection() {
     }
 
     try {
-      const formData = { newEndTime: newEndTime.toISOString() };
+      const formData = { newEndTime: new Date(newEndTime.$d) };
 
       await axios.put(
         `${API_BASE_URL}/election/extend/${extendElectionId}`,
@@ -279,7 +275,7 @@ function CreateElection() {
   const updateElectionStatuses = async () => {
     try {
       const response = await axios.get(
-        `${API_BASE_URL}/election/status/${extendElectionId}`,
+        `${API_BASE_URL}/election/status`,
         {
           headers: {
             Authorization: `Bearer ${localStorage.getItem("adminToken")}`,
@@ -422,7 +418,7 @@ function CreateElection() {
           <Button
             type="primary"
             onClick={handleCreateElection}
-            disabled={!title || !startTime || !endTime }
+            disabled={!title || !startTime || !endTime}
           >
             Create Election
           </Button>
@@ -513,7 +509,7 @@ function CreateElection() {
       >
         <Form layout="vertical">
           <Form.Item label="New End Time">
-            <DatePicker
+            <TimePicker
               showTime={{ format: "HH:mm" }}
               format="YYYY-MM-DD HH:mm"
               value={newEndTime ? newEndTime : null}

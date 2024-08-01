@@ -112,16 +112,14 @@ const VoterLogin = () => {
       navigate("/candidates");
     } catch (error) {
       console.error("Login error:", error);
-      message.error("Login failed. Please check your credentials.");
+      message.info(error.response?.data?.message);
     }
   };
 
   useEffect(() => {
     if (user) {
       console.log("Logged in user:", user);
-      // You can display the user data here
-      // For example:
-      // <h2>Welcome, {user.name}!</h2>
+      
     }
   }, [user]);
 

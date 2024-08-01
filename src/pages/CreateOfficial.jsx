@@ -46,10 +46,10 @@ function CreateOfficial() {
     }
   };
 
-  const handleGrantAccess = async (officialId) => {
+  const handleGrantAccess = async (studentId) => {
     try {
       await axios.put(
-        `${import.meta.env.VITE_API_URL}/official/${officialId}/grant-access`,
+        `${import.meta.env.VITE_API_URL}/official/access/${studentId}`,
         {},
         {
           headers: {
@@ -65,10 +65,10 @@ function CreateOfficial() {
     }
   };
 
-  const handleRevokeAccess = async (officialId) => {
+  const handleRevokeAccess = async (studentId) => {
     try {
       await axios.put(
-        `${import.meta.env.VITE_API_URL}/official/${officialId}/revoke-access`,
+        `${import.meta.env.VITE_API_URL}/official/revoke/${studentId}`,
         {},
         {
           headers: {
@@ -119,24 +119,24 @@ function CreateOfficial() {
                 <Button
                   type="default"
                   className={`border border-dashed rounded-md h-[20px] ${
-                    official.accessGranted
+                    official.access
                       ? "border-green-500 text-[10px] font-bold text-green-500"
                       : "border-red-500 text-[10px] font-bold text-red-500"
                   }`}
                 >
-                  {official.accessGranted ? " Granted" : "Access Denied"}
+                  {official.access ? " Granted" : "Access Denied"}
                 </Button>
               </div>
               <Button
                 type="default"
                 onClick={
-                  official.accessGranted
-                    ? () => handleRevokeAccess(official._id)
-                    : () => handleGrantAccess(official._id)
+                  official.access
+                    ? () => handleRevokeAccess(official.STUDENTID)
+                    : () => handleGrantAccess(official.STUDENTID)
                 }
                 className="border text-[12px] font-bold h-[30px] border-dashed"
               >
-                {official.accessGranted ? "Revoke Access" : "Grant Access"}
+                {official.access ? "Revoke Access" : "Grant Access"}
               </Button>
             </div>
           </List.Item>

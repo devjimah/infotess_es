@@ -11,7 +11,7 @@ const ViewCandidates = () => {
   useEffect(() => {
     const fetchAllPortfolios = async () => {
       const portfolioIds = [
-        ...new Set(candidates.map((candidate) => candidate.portfolioId)),
+        ...new Set(candidates.map((candidate) => candidate.portfolio)),
       ];
 
       const portfolioNamesMap = {};
@@ -69,7 +69,7 @@ const ViewCandidates = () => {
         {sortedPortfolios.map((portfolio) => (
           <div key={portfolio} className="mb-8">
             <h2 className="text-xl font-semibold mb-4 text-center">
-              {portfolio.toUpperCase()}
+              {name.toUpperCase()}
             </h2>
             <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
               {groupedCandidates[portfolio].map((candidate) => (
@@ -78,7 +78,7 @@ const ViewCandidates = () => {
                   style={{
                     transition: "transform 0.3s ease-in-out",
                     width: 200,
-                    height: 220,
+                    height: 250,
                     display: "flex",
                     flexDirection: "column",
                     justifyContent: "space-between",
@@ -88,7 +88,7 @@ const ViewCandidates = () => {
                     <img
                       alt={candidate.name}
                       src={candidate.image}
-                      style={{ height: 130, objectFit: "cover" }}
+                      style={{ height: 150, width: 200, objectFit: "cover" }}
                     />
                   }
                 >
@@ -99,6 +99,8 @@ const ViewCandidates = () => {
                       display: "flex",
                       width: "100%",
                       justifyContent: "space-between",
+                      fontSize: 12,
+                      fontWeight:"bold"
                     }}
                   />
                 </Card>

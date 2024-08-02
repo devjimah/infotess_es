@@ -43,7 +43,6 @@ function CreateElection() {
   };
 
   useEffect(() => {
-    console.log("extendElectionId updated:", extendElectionId);
   }, [extendElectionId]);
 
   useEffect(() => {
@@ -118,7 +117,6 @@ function CreateElection() {
       setTitle("");
       setStartTime(null);
       setEndTime(null);
-      // setCandidates([]);
       message.success("Election created successfully");
     } catch (error) {
       message.error("An error occurred. Please try again.");

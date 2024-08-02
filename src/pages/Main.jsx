@@ -29,6 +29,8 @@ const PortfolioManager = () => {
   const [ballot, setBallot] = useState(null);
   const [image, setImage] = useState("");
   const [gender, setGender] = useState("");
+  const [setElections] = useState([]);
+
   const [candidateForm] = Form.useForm();
   const [currentPage, setCurrentPage] = useState(1);
   const pageSize = 5;
@@ -44,8 +46,16 @@ const PortfolioManager = () => {
     setPortfolio(value);
   };
 
+  const electionMap = elections.reduce((acc, election) => {
+    acc[election._id] = election.title;
+    return acc;
+  }, {});
+
   const handleChangeElection = (value) => {
-    setElection(value);
+    const selectedElection = elections.find(
+      (election) => election._id === value
+    );
+    setElection(selectedElection);
   };
 
   const handleChange = (value) => {
@@ -53,7 +63,16 @@ const PortfolioManager = () => {
   };
 
   const handlePortfolioSubmit = async () => {
-    const formData = { name, priority };
+    // Ensure the election object is valid and has an _id property
+    if (!election || !election._id) {
+      message.error("Please select a valid election");
+      return;
+    }
+
+    const formData = { name, priority, election: election._id };
+
+    // Log the formData to see what is being sent
+    console.log("FormData being sent:", formData);
 
     try {
       const response = await axios.post(
@@ -71,21 +90,47 @@ const PortfolioManager = () => {
       console.log(data);
       setName("");
       setPriority(0);
+      setElection("");
       message.success("Portfolio created successfully");
     } catch (error) {
       console.error("Error submitting portfolio:", error);
       if (error.response) {
         console.log("Server responded with:", error.response.status);
         console.log("Response data:", error.response.data);
+        message.error(
+          `Error creating portfolio: ${
+            error.response.data.message || "Unknown error"
+          }`
+        );
       } else if (error.request) {
         console.log("Request made but no response received:", error.request);
+        message.error("No response from server");
       } else {
         console.log("Error setting up request:", error.message);
+        message.error("Error setting up request");
       }
-      message.error("Error creating portfolio");
     }
   };
 
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        const portfolioResponse = await axios.get(
+          "http://localhost:3000/api/portfolios"
+        );
+        const electionResponse = await axios.get(
+          "http://localhost:3000/api/elections"
+        );
+
+        setPortfolios(portfolioResponse.data);
+        setElections(electionResponse.data);
+      } catch (error) {
+        console.error("Error fetching data:", error);
+      }
+    };
+
+    fetchData();
+  }, []);
   useEffect(() => {
     const fetchPortfolios = async () => {
       try {
@@ -172,6 +217,14 @@ const PortfolioManager = () => {
                 dataIndex: "priority",
                 key: "priority",
               },
+              {
+                title: "Election",
+                dataIndex: "election",
+                key: "election",
+                render: (election) => (
+                  <span>{electionMap[election._id] || "Unknown Election"}</span>
+                ),
+              },
             ]}
             pagination={false}
           />
@@ -235,6 +288,21 @@ const PortfolioManager = () => {
               onChange={(e) => setName(e.target.value)}
             />
           </Item>
+          <Item
+            name="election"
+            label="Election"
+            rules={[{ required: true, message: "Please select Election" }]}
+          >
+            <Select
+              value={election._id}
+              onChange={handleChangeElection}
+              options={elections.map((election) => ({
+                value: election._id,
+                label: election.title,
+              }))}
+            />
+          </Item>
+
           <Item
             name="priority"
             label="Priority"

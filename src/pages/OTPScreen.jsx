@@ -7,6 +7,9 @@ const OTPGenerator = () => {
   const [isOtpGenerated, setIsOtpGenerated] = useState(false);
   const [voterInfo, setVoterInfo] = useState(null);
   const [generatedOTP, setGeneratedOTP] = useState("");
+  const [isOfficialLoggedIn, setIsOfficialLoggedIn] = useState(false);
+  const [officialID, setOfficialID] = useState("");
+  const [officialPassword, setOfficialPassword] = useState("");
 
   const generateSimpleOTP = (studentId) => {
     const chars = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ";
@@ -21,6 +24,31 @@ const OTPGenerator = () => {
     }
 
     return otp;
+  };
+
+  const handleOfficialLogin = async () => {
+    try {
+      const formData = { STUDENTID: officialID, password: officialPassword };
+      const response = await axios.post(
+        "http://localhost:3000/api/auth/official/login",
+        formData,
+        {
+          headers: {
+            "Content-Type": "application/json",
+          },
+        }
+      );
+      const data = response.data;
+      console.log(data);
+      const token = data.token;
+      localStorage.setItem("officialToken", token);
+
+      message.success("Login successful");
+      setIsOfficialLoggedIn(true);
+    } catch (error) {
+      console.log(error);
+      message.error("Login failed");
+    }
   };
 
   const generateOTP = async () => {
@@ -38,8 +66,6 @@ const OTPGenerator = () => {
           },
         }
       );
-
-      console.log("Full response:", response.data);
 
       if (response.data.message === "OTP Generated successfully") {
         const updatedVoter = response.data.updatedVoter;
@@ -64,7 +90,39 @@ const OTPGenerator = () => {
     }
   };
 
-  return (
+  return !isOfficialLoggedIn ? (
+    <div className="flex justify-center items-center h-screen">
+      <div className="bg-white p-8 rounded shadow-lg max-w-md w-full flex flex-col items-center">
+        <h2 className="text-2xl mb-4">Official Login</h2>
+        <Form layout="vertical" className="w-full flex flex-col items-center">
+          <Form.Item label="Official ID">
+            <Input
+              className="w-52"
+              value={officialID}
+              onChange={(e) => setOfficialID(e.target.value)}
+              placeholder="Enter Official ID"
+            />
+          </Form.Item>
+          <Form.Item label="Password">
+            <Input.Password
+              value={officialPassword}
+              onChange={(e) => setOfficialPassword(e.target.value)}
+              placeholder="Enter Password"
+            />
+          </Form.Item>
+          <Form.Item>
+            <Button
+              type="primary"
+              className="w-52"
+              onClick={handleOfficialLogin}
+            >
+              Login
+            </Button>
+          </Form.Item>
+        </Form>
+      </div>
+    </div>
+  ) : (
     <div className="flex justify-center items-center h-screen">
       <div className="bg-white p-8 rounded shadow-lg max-w-md w-full flex flex-col items-center">
         <h2 className="text-2xl mb-4">Generate OTP</h2>
@@ -96,13 +154,9 @@ const OTPGenerator = () => {
           </div>
         )}
         {isOtpGenerated && voterInfo && (
-          <div className="mt-4 text-center">
-            <h3 className="font-bold">Voter Information</h3>
-            <p>
-              Name:{" "}
-              {`${voterInfo.FIRSTNAME.trim()}`.trim()}
-            </p>
-          
+          <div className="mt-3 text-center">
+            <h3 className="font-bold">Voter Details</h3>
+            <p>Name: {`${voterInfo.FIRSTNAME.trim()}`.trim()}</p>
           </div>
         )}
       </div>

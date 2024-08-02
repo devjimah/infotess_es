@@ -114,7 +114,7 @@ function CreateOfficial() {
         renderItem={(official) => (
           <List.Item key={official._id}>
             <div className="flex justify-between items-center w-full mb-4">
-              <div className="flex items-center space-x-3">
+              <div className="flex w-[400px] items-center space-x-3">
                 <h4 className="text-md font-medium">{official.fullName}</h4>
                 <Button
                   type="default"

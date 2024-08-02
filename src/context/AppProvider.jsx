@@ -192,6 +192,7 @@ export const AppProvider = ({ children }) => {
     localStorage.removeItem("adminToken");
     localStorage.removeItem("userRole");
     localStorage.removeItem("user");
+    localStorage.removeItem("official");
     setCandidates([]);
     setElections([]);
     setVoters([]);
